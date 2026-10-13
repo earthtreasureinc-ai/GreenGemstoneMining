@@ -10,7 +10,7 @@ interface MediaPanelProps {
   onUploaded: () => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const CATEGORIES: { value: MediaCategory; label: string }[] = [
   { value: 'hero', label: 'Hero / Banner' },
