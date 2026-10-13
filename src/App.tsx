@@ -92,10 +92,16 @@ const GALLERY = [
 ];
 
 type GalleryFilter = 'All' | 'Company' | 'Deposits' | 'Projects' | 'Ore gallery' | 'Field gallery' | 'Contact' | 'My uploads';
-
 const GALLERY_FILTERS: GalleryFilter[] = ['All', 'Company', 'Deposits', 'Projects', 'Ore gallery', 'Field gallery', 'Contact', 'My uploads'];
 
-type GalleryItem = { src: string; label: string; w: string; type: 'image' | 'video'; isUpload?: boolean };
+type GalleryItem = { src: string; label: string; w: string; type: 'image' | 'video'; isUpload?: boolean; folder?: string };
+
+const getUploadFolderName = (storagePath?: string | null): string => {
+  if (!storagePath) return '';
+  const parts = storagePath.split('/').filter(Boolean);
+  if (parts.length <= 2) return '';
+  return parts.slice(1, -1).join('/');
+};
 
 function matchesGalleryFilter(item: GalleryItem, filter: GalleryFilter): boolean {
   if (filter === 'All') return true;
@@ -124,7 +130,6 @@ const HERO_METRICS = [
   { value: 'Global', label: 'Partnership focus' },
 ];
 
-/* ═══ HOOKS ═══ */
 function useScrollHeader() {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -182,7 +187,6 @@ function Counter({ value, label }: { value: number; label: string }) {
   );
 }
 
-/* ═══ PARTICLE CANVAS ═══ */
 function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -241,7 +245,6 @@ function ParticleCanvas() {
   return <canvas id="particles" ref={canvasRef} />;
 }
 
-/* ═══ TEXT SCRAMBLE ═══ */
 function Scramble({ text, delay = 0 }: { text: string; delay?: number }) {
   const [display, setDisplay] = useState(text);
   useEffect(() => {
@@ -268,7 +271,6 @@ function Scramble({ text, delay = 0 }: { text: string; delay?: number }) {
   return <span className="scramble">{display}</span>;
 }
 
-/* ═══ 3D CRYSTAL ═══ */
 function Crystal3D() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -291,7 +293,6 @@ function Crystal3D() {
   );
 }
 
-/* ═══ CUSTOM CURSOR ═══ */
 function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -326,7 +327,6 @@ function CustomCursor() {
   </>;
 }
 
-/* ═══ LOADING SCREEN ═══ */
 function Loader({ done }: { done: boolean }) {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -344,7 +344,6 @@ function Loader({ done }: { done: boolean }) {
   );
 }
 
-/* ═══ SCROLL PROGRESS ═══ */
 function ScrollProgress() {
   const [width, setWidth] = useState(0);
   useEffect(() => {
@@ -358,7 +357,6 @@ function ScrollProgress() {
   return <div className="scroll-progress" style={{ width: `${width}%` }} />;
 }
 
-/* ═══ SVG MAP ═══ */
 function SomalilandMap() {
   const [hovered, setHovered] = useState<string | null>(null);
   return (
@@ -375,7 +373,6 @@ function SomalilandMap() {
   );
 }
 
-/* ═══ APP ═══ */
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -384,30 +381,52 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<MediaUpload[]>([]);
+  const [storageFolders, setStorageFolders] = useState<string[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string>('All folders');
   const [lightboxItem, setLightboxItem] = useState<{ src: string; type: 'image' | 'video' } | null>(null);
   const scrolled = useScrollHeader();
   useReveals();
   const marqueeItems = [...MARQUEE, ...MARQUEE];
 
   const fetchUploadedMedia = useCallback(async () => {
-    const { data } = await supabase
-      .from('media_uploads')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false });
-    if (data) setUploadedMedia(data as MediaUpload[]);
+    const [mediaResult, foldersResult] = await Promise.all([
+      supabase
+        .from('media_uploads')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false }),
+      supabase.storage.from('media').list('gallery', { limit: 1000, sortBy: { column: 'name', order: 'asc' } }),
+    ]);
+
+    if (mediaResult.data) setUploadedMedia(mediaResult.data as MediaUpload[]);
+
+    if (!foldersResult.error && foldersResult.data) {
+      const folders = (foldersResult.data ?? [])
+        .filter((item) => item.type === 'folder')
+        .map((item) => item.name)
+        .filter(Boolean);
+      setStorageFolders(folders);
+    }
   }, []);
 
   useEffect(() => { fetchUploadedMedia(); }, [fetchUploadedMedia]);
 
-  const uploadedGalleryItems: GalleryItem[] = uploadedMedia.map((m) => ({
-    src: m.public_url,
-    label: m.title,
-    w: 'w6',
-    type: m.media_type,
-    isUpload: true,
-  }));
+  const galleryFolderOptions = ['All folders', ...new Set([
+    ...storageFolders,
+    ...uploadedMedia.map((m) => getUploadFolderName(m.storage_path)).filter(Boolean),
+  ])];
+
+  const uploadedGalleryItems: GalleryItem[] = uploadedMedia
+    .filter((m) => selectedFolder === 'All folders' || getUploadFolderName(m.storage_path) === selectedFolder)
+    .map((m) => ({
+      src: m.public_url,
+      label: m.title,
+      w: 'w6',
+      type: m.media_type,
+      isUpload: true,
+      folder: getUploadFolderName(m.storage_path),
+    }));
 
   const allGalleryItems: GalleryItem[] = [
     ...GALLERY.map((g) => ({ ...g, type: 'image' as const, isUpload: false })),
@@ -442,7 +461,6 @@ export default function App() {
       <MediaPanel open={mediaOpen} onClose={() => setMediaOpen(false)} onUploaded={fetchUploadedMedia} />
 
       <main>
-        {/* ═══ HERO ═══ */}
         <section id="top" className="hero">
           <img className="hero-design" src="/assets/canva/page_01.png" alt="Green Gemstone Mining Company brand artwork" />
           <ParticleCanvas />
@@ -454,7 +472,7 @@ export default function App() {
               <Scramble text="Somaliland's" delay={400} />
               <Scramble text="mineral frontier" delay={700} />
             </h1>
-            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland — with long-term value for investors, local communities, and strategic partners.</p>
+            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland — with a disciplined focus on value, partnership, and local opportunity.</p>
             <div className="hero-cta">
               <a className="btn btn-gold" href="#contact">Request investor pack <ArrowRight size={16} /></a>
               <a className="btn-ghost" href="#resources">Explore portfolio <ChevronDown size={16} /></a>
@@ -471,12 +489,10 @@ export default function App() {
           <div className="hero-foot"><span>Responsible mining. Lasting value.</span></div>
         </section>
 
-        {/* ═══ MARQUEE ═══ */}
         <section className="marquee">
           <div className="marquee-track">{marqueeItems.map((w, i) => <span key={i}><Gem size={12} /> {w}</span>)}</div>
         </section>
 
-        {/* ═══ COMPANY ═══ */}
         <section id="company" className="sec">
           <div className="sec-container company">
             <div className="company-visual reveal">
@@ -487,14 +503,13 @@ export default function App() {
               <p className="eyebrow">About the company</p>
               <h2 className="display">Built in Somaliland.<br /><em>Ready for global capital.</em></h2>
               <p className="body-lg">Green Gemstone Mining Company combines local geology expertise, disciplined exploration, and a partnership-driven ambition to unlock Somaliland's mineral potential.</p>
-              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities with responsible development principles at the centre.</p>
+              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities and transparent development practices.</p>
               <p className="body-text">Our diverse local workforce reflects the regions we operate in and the relationships we continue to build around safe, transparent, and sustainable mining practices.</p>
               <a className="link-go" href="#mission">How we work <ArrowRight size={15} /></a>
             </div>
           </div>
         </section>
 
-        {/* ═══ DEPOSITS ═══ */}
         <section id="resources" className="sec sec-dark">
           <div className="sec-container">
             <div className="deposits-head reveal">
@@ -502,7 +517,7 @@ export default function App() {
                 <p className="eyebrow">Resource portfolio</p>
                 <h2 className="display light">A broader view<br /><em>of what is possible.</em></h2>
               </div>
-              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership.</p>
+              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership-driven growth.</p>
             </div>
             <div className="deposits-grid">
               {DEPOSITS.map((d, i) => (
@@ -520,14 +535,13 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ INDUSTRIAL SPLIT ═══ */}
         <section id="industrial" className="split">
           <div className="split-img"><img src={P.quarry} alt="Open-pit mining operation" /></div>
           <div className="split-text">
             <div className="reveal">
               <p className="eyebrow">Industrial metals</p>
               <h2 className="display light">Materials with<br /><em>lasting relevance.</em></h2>
-              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and a disciplined approach to value creation.</p>
+              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and disciplined development.</p>
               <div className="split-stats">
                 <Counter value={12} label="Resources targeted" />
                 <Counter value={6} label="Project regions" />
@@ -538,13 +552,12 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ MISSION ═══ */}
         <section id="mission" className="sec">
           <div className="sec-container">
             <div className="mission-head reveal">
               <p className="eyebrow">Vision and mission</p>
               <h2 className="display">Progress that<br /><em>earns trust.</em></h2>
-              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand operations through responsible practice, strategic partnerships, and long-term local benefit.</p>
+              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand opportunity responsibly.</p>
             </div>
             <div className="mission-grid">
               {[
@@ -562,7 +575,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ PROJECTS / MAP ═══ */}
         <section id="projects" className="sec sec-dark">
           <div className="sec-container">
             <div className="reveal center-block">
@@ -585,7 +597,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ TIMELINE ═══ */}
         <section className="sec">
           <div className="sec-container">
             <div className="reveal center-block">
@@ -605,7 +616,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ GALLERY ═══ */}
         <section id="gallery" className="sec sec-dark">
           <div className="sec-container">
             <div className="reveal center-block">
@@ -627,16 +637,32 @@ export default function App() {
               </button>
             ))}
           </div>
+          {galleryFolderOptions.length > 1 && (
+            <div className="gallery-filters" role="tablist" aria-label="Filter gallery folders">
+              {galleryFolderOptions.map((folder) => (
+                <button
+                  key={folder}
+                  className={selectedFolder === folder ? 'active' : ''}
+                  onClick={() => setSelectedFolder(folder)}
+                  role="tab"
+                  aria-selected={selectedFolder === folder}
+                >
+                  {folder}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="gallery-h reveal">
             <div className="gallery-track">
               {visibleGallery.map((g, i) => (
-                <button key={i} className={`g-item ${g.w}`} onClick={() => setLightboxItem({ src: g.src, type: g.type })}>
+                <button key={`${g.src}-${i}`} className={`g-item ${g.w}`} onClick={() => setLightboxItem({ src: g.src, type: g.type })}>
                   {g.type === 'video' ? (
                     <video src={g.src} muted className="g-video" />
                   ) : (
                     <img src={g.src} alt={g.label} loading="lazy" />
                   )}
                   {g.type === 'video' && <span className="g-video-icon"><Video size={16} /></span>}
+                  {g.folder && <span className="g-label" style={{ display: 'block', marginTop: '8px', fontSize: '0.65rem', opacity: 0.8 }}>{g.folder}</span>}
                   <span className="g-label">{g.label}</span>
                 </button>
               ))}
@@ -644,7 +670,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ MINERALS ═══ */}
         <section className="sec">
           <div className="sec-container">
             <div className="reveal center-block">
@@ -664,7 +689,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* ═══ CONTACT ═══ */}
         <section id="contact" className="contact-sec">
           <div className="contact-visual">
             <img src={P.mountains} alt="Misty mountain landscape" />
@@ -674,7 +698,7 @@ export default function App() {
             <div className="reveal">
               <p className="eyebrow">Start a conversation</p>
               <h2 className="display light">Bring the right<br /><em>people together.</em></h2>
-              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it responsibly.</p>
+              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it.</p>
               <div className="contact-info">
                 <a href="mailto:greengemstonemining@gmail.com"><Mail size={16} /> greengemstonemining@gmail.com</a>
                 <span><MapPin size={16} /> Omar Hashi Building, 4th Floor, Hargeisa, Somaliland</span>
