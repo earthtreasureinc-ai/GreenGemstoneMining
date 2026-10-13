@@ -22,6 +22,8 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   const [allMedia, setAllMedia] = useState<MediaUpload[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [folderCreating, setFolderCreating] = useState(false);
+  const [folderStatus, setFolderStatus] = useState<string | null>(null);
   const [uploadCategory, setUploadCategory] = useState<MediaCategory>('gallery');
   const [uploadSubfolder, setUploadSubfolder] = useState('');
   const [uploadTitle, setUploadTitle] = useState('');
@@ -42,6 +44,37 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     if (open) fetchAll();
   }, [open, fetchAll]);
 
+  const handleCreateFolder = useCallback(async () => {
+    const rawSub = (uploadSubfolder || '').trim().replace(/^\/+|\/+$/g, '');
+    const safeSub = rawSub ? rawSub.replace(/[^a-zA-Z0-9\-_.\/]/g, '').replace(/\/+/g, '/') : '';
+
+    if (!safeSub) {
+      setFolderStatus('Enter a folder name first');
+      return;
+    }
+
+    setFolderCreating(true);
+    setFolderStatus(null);
+
+    try {
+      const folderPath = `${uploadCategory}/${safeSub}`;
+      const placeholder = new File([''], '.keep', { type: 'text/plain' });
+      const { error } = await supabase.storage
+        .from('media')
+        .upload(`${folderPath}/.keep`, placeholder, { cacheControl: '3600', upsert: true });
+
+      if (error) {
+        setFolderStatus(`Could not create folder: ${error.message}`);
+      } else {
+        setFolderStatus(`Created folder: ${safeSub}`);
+      }
+    } finally {
+      setFolderCreating(false);
+      onUploaded();
+      fetchAll();
+    }
+  }, [fetchAll, onUploaded, uploadCategory, uploadSubfolder]);
+
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
@@ -52,7 +85,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
       const isVideo = file.type.startsWith('video/') || videoExtensions.includes(ext);
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
       const rawSub = (uploadSubfolder || '').trim().replace(/^\/+|\/+$/g, '');
-      const safeSub = rawSub ? rawSub.replace(/[^a-zA-Z0-9\-_.\/]/g, '') : '';
+      const safeSub = rawSub ? rawSub.replace(/[^a-zA-Z0-9\-_.\/]/g, '').replace(/\/+/g, '/') : '';
       const filePath = safeSub ? `${uploadCategory}/${safeSub}/${fileName}` : `${uploadCategory}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -154,13 +187,29 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
               </div>
               <div>
                 <label className="media-label">Subfolder (optional)</label>
-                <input
-                  type="text"
-                  value={uploadSubfolder}
-                  onChange={(e) => setUploadSubfolder(e.target.value)}
-                  placeholder="e.g. photos or videos/2026"
-                  className="media-input"
-                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={uploadSubfolder}
+                    onChange={(e) => setUploadSubfolder(e.target.value)}
+                    placeholder="e.g. photos or videos/2026"
+                    className="media-input"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateFolder}
+                    className="media-thumb-btn"
+                    title="Create folder"
+                    disabled={folderCreating}
+                    style={{ minWidth: '110px' }}
+                  >
+                    {folderCreating ? 'Creating...' : 'Create folder'}
+                  </button>
+                </div>
+                {folderStatus && (
+                  <p style={{ marginTop: '8px', fontSize: '12px', color: '#d7c38a' }}>{folderStatus}</p>
+                )}
               </div>
             </div>
 
