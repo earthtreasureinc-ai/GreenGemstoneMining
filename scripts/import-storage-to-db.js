@@ -3,16 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 
 const categories = ['hero', 'company', 'deposits', 'projects', 'gallery', 'contact', 'general'];
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  }
-);
+const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE ?? process.env.VITE_SUPABASE_SERVICE_ROLE;
+
+if (!supabaseUrl || !supabaseServiceRole) {
+  console.error('Missing Supabase configuration. Set either SUPABASE_URL/SUPABASE_SERVICE_ROLE or VITE_SUPABASE_URL/VITE_SUPABASE_SERVICE_ROLE before running this script.');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceRole, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
 const isVideo = (name) => {
   const ext = (name.split('.').pop() || '').toLowerCase();
