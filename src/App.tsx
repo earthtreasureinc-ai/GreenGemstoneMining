@@ -437,6 +437,15 @@ function SomalilandMap() {
           onMouseEnter={() => setHovered(r.name)}
           onMouseLeave={() => setHovered(null)}
           onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label={`Go to contact section for ${r.name}`}
         >
           <rect className="region-shape" x={r.x} y={r.y} width={r.w} height={r.h} rx="10" fillOpacity={hovered === r.name ? '0.3' : '0.15'} />
           <circle cx={r.x + r.w / 2} cy={r.y + r.h / 2} r="4" fill="var(--gold)" />
@@ -721,6 +730,7 @@ export default function App() {
                 onClick={() => setGalleryFilter(filter)}
                 role="tab"
                 aria-selected={galleryFilter === filter}
+                aria-pressed={galleryFilter === filter}
               >
                 {filter}
               </button>
@@ -736,6 +746,7 @@ export default function App() {
                   onClick={() => setSelectedFolder(folder)}
                   role="tab"
                   aria-selected={selectedFolder === folder}
+                  aria-pressed={selectedFolder === folder}
                 >
                   {folder}
                 </button>
@@ -748,7 +759,7 @@ export default function App() {
               <div className="gallery-folder-grid">
                 {folderGroups.length > 0 ? (
                   folderGroups.map(([folder, items]) => (
-                    <button key={folder} className="gallery-folder-card" onClick={() => setSelectedFolder(folder)}>
+                    <button key={folder} className="gallery-folder-card" onClick={() => setSelectedFolder(folder)} aria-label={`Open folder ${folder}`}>
                       <div className="gallery-folder-thumb">
                         {items[0] && (items[0].media_type === 'video' ? (
                           <video src={items[0].public_url} muted />
@@ -769,7 +780,7 @@ export default function App() {
             ) : (
               <div className="gallery-track">
                 {visibleGallery.map((item, index) => (
-                  <button key={`${item.src}-${index}`} className={`g-item ${item.w}`} onClick={() => setLightboxItem({ src: item.src, type: item.type })}>
+                  <button key={`${item.src}-${index}`} className={`g-item ${item.w}`} onClick={() => setLightboxItem({ src: item.src, type: item.type })} aria-label={`Open ${item.label}`}>
                     {item.type === 'video' ? (
                       <video src={item.src} muted className="g-video" />
                     ) : (
@@ -861,7 +872,9 @@ export default function App() {
 
       {lightboxItem && (
         <div className="lightbox" role="dialog" aria-modal="true" onClick={() => setLightboxItem(null)}>
-          <button ref={lightboxButtonRef} onClick={() => setLightboxItem(null)} aria-label="Close"><X /></button>
+          <button ref={lightboxButtonRef} onClick={() => setLightboxItem(null)} aria-label="Close">
+            <X />
+          </button>
           {lightboxItem.type === 'video' ? (
             <video src={lightboxItem.src} controls autoPlay className="lightbox-video" onClick={(e) => e.stopPropagation()} />
           ) : (
