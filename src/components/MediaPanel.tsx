@@ -23,6 +23,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<MediaCategory>('gallery');
+  const [uploadSubfolder, setUploadSubfolder] = useState('');
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +51,9 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
       const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
       const isVideo = file.type.startsWith('video/') || videoExtensions.includes(ext);
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
-      const filePath = `${uploadCategory}/${fileName}`;
+      const rawSub = (uploadSubfolder || '').trim().replace(/^\/+|\/+$/g, '');
+      const safeSub = rawSub ? rawSub.replace(/[^a-zA-Z0-9\-_.\/]/g, '') : '';
+      const filePath = safeSub ? `${uploadCategory}/${safeSub}/${fileName}` : `${uploadCategory}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('media')
@@ -77,6 +80,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
 
     setUploadTitle('');
     setUploadDesc('');
+    setUploadSubfolder('');
     setUploading(false);
     fetchAll();
     onUploaded();
@@ -147,6 +151,16 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="media-label">Subfolder (optional)</label>
+                <input
+                  type="text"
+                  value={uploadSubfolder}
+                  onChange={(e) => setUploadSubfolder(e.target.value)}
+                  placeholder="e.g. photos or videos/2026"
+                  className="media-input"
+                />
               </div>
             </div>
 
