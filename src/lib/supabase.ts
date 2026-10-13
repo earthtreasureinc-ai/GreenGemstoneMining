@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } = import.meta.env;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!VITE_SUPABASE_URL || !VITE_SUPABASE_ANON_KEY) {
+  console.warn('Supabase env vars are missing. Media uploads and gallery sync will fail until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
+}
+
+export const supabase = createClient(VITE_SUPABASE_URL || '', VITE_SUPABASE_ANON_KEY || '');
 
 export type MediaCategory =
   | 'hero'
