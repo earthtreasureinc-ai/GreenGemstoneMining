@@ -20,12 +20,12 @@ const P = {
 };
 
 const NAV = [
-  { label: 'Home', href: '#top' },
+  { label: 'Overview', href: '#top' },
   { label: 'Company', href: '#company' },
-  { label: 'Deposits', href: '#resources' },
-  { label: 'Industrial metals', href: '#industrial' },
-  { label: 'Gemstones & projects', href: '#projects' },
-  { label: 'Photos', href: '#gallery' },
+  { label: 'Portfolio', href: '#resources' },
+  { label: 'Projects', href: '#projects' },
+  { label: 'Gallery', href: '#gallery' },
+  { label: 'Contact', href: '#contact' },
 ];
 
 const DEPOSITS = [
@@ -116,6 +116,13 @@ const TIMELINE = [
 ];
 
 const MARQUEE = ['Responsible', 'Locally rooted', 'Globally ambitious', 'Resource focused', 'Partnership driven', 'Built to last'];
+
+const HERO_METRICS = [
+  { value: '6', label: 'Regions explored' },
+  { value: '12+', label: 'Mineral verticals' },
+  { value: '250+', label: 'Local workforce' },
+  { value: 'Global', label: 'Partnership focus' },
+];
 
 /* ═══ HOOKS ═══ */
 function useScrollHeader() {
@@ -289,6 +296,7 @@ function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let mx = 0, my = 0, rx = 0, ry = 0;
     const onMove = (e: MouseEvent) => {
       mx = e.clientX; my = e.clientY;
@@ -423,12 +431,12 @@ export default function App() {
 
       <header className={`hdr ${scrolled ? 'scrolled' : ''}`}>
         <a className="hdr-brand" href="#top"><Gem size={22} /><span>Green Gemstone</span></a>
-        <nav className={`hdr-nav ${menuOpen ? 'open' : ''}`}>
+        <nav className={`hdr-nav ${menuOpen ? 'open' : ''}`} role="navigation" aria-label="Main navigation">
           {NAV.map((n) => <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)}>{n.label}</a>)}
           <a className="hdr-cta" href="#contact" onClick={() => setMenuOpen(false)}>Partner with us <ArrowUpRight size={14} /></a>
           <button className="hdr-media-btn" onClick={() => { setMediaOpen(true); setMenuOpen(false); }} aria-label="Manage media"><Settings size={16} /><span>Manage</span></button>
         </nav>
-        <button className="hdr-burger" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">{menuOpen ? <X /> : <Menu />}</button>
+        <button className="hdr-burger" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">{menuOpen ? <X /> : <Menu />}</button>
       </header>
 
       <MediaPanel open={mediaOpen} onClose={() => setMediaOpen(false)} onUploaded={fetchUploadedMedia} />
@@ -441,18 +449,26 @@ export default function App() {
           <div className="hero-overlay" />
           <Crystal3D />
           <div className="hero-inner">
-            <p className="hero-kicker">Hargeisa, Somaliland</p>
+            <p className="hero-kicker">Somaliland • Strategic mineral development</p>
             <h1>
-              <Scramble text="Green Gemstone" delay={400} />
-              <Scramble text="Mining Company" delay={700} />
+              <Scramble text="Somaliland's" delay={400} />
+              <Scramble text="mineral frontier" delay={700} />
             </h1>
-            <p className="hero-sub">A locally rooted company developing Somaliland's mineral wealth — gemstones, rare earths, and industrial metals — with responsibility, ambition, and lasting local value.</p>
+            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland — with long-term value for investors, local communities, and strategic partners.</p>
             <div className="hero-cta">
-              <a className="btn btn-gold" href="#resources">Explore the opportunity <ArrowRight size={16} /></a>
-              <a className="btn-ghost" href="#company">Our story <ChevronDown size={16} /></a>
+              <a className="btn btn-gold" href="#contact">Request investor pack <ArrowRight size={16} /></a>
+              <a className="btn-ghost" href="#resources">Explore portfolio <ChevronDown size={16} /></a>
+            </div>
+            <div className="hero-metrics">
+              {HERO_METRICS.map((metric) => (
+                <div key={metric.label} className="metric-card">
+                  <strong>{metric.value}</strong>
+                  <span>{metric.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="hero-foot"><span>Green Gemstone Mining Company</span></div>
+          <div className="hero-foot"><span>Responsible mining. Lasting value.</span></div>
         </section>
 
         {/* ═══ MARQUEE ═══ */}
@@ -469,10 +485,10 @@ export default function App() {
             </div>
             <div className="company-text reveal" style={{ transitionDelay: '120ms' }}>
               <p className="eyebrow">About the company</p>
-              <h2 className="display">Built in Somaliland.<br /><em>Open to the world.</em></h2>
-              <p className="body-lg">Green Gemstone Mining Company is a Hargeisa-based mining and development company focused on high-grade gemstone, rare earth, and industrial metal deposits across Somaliland.</p>
-              <p className="body-text">We are building a platform that combines local knowledge, disciplined operations, and the right long-term partners — investors, technical experts, deposit holders, and operators — to turn promising ground into responsible, investable projects.</p>
-              <p className="body-text">Our diverse local workforce represents every region of Somaliland. We are committed to safe, sustainable practices that create value for employees, communities, shareholders, and partners alike.</p>
+              <h2 className="display">Built in Somaliland.<br /><em>Ready for global capital.</em></h2>
+              <p className="body-lg">Green Gemstone Mining Company combines local geology expertise, disciplined exploration, and a partnership-driven ambition to unlock Somaliland's mineral potential.</p>
+              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities with responsible development principles at the centre.</p>
+              <p className="body-text">Our diverse local workforce reflects the regions we operate in and the relationships we continue to build around safe, transparent, and sustainable mining practices.</p>
               <a className="link-go" href="#mission">How we work <ArrowRight size={15} /></a>
             </div>
           </div>
@@ -486,7 +502,7 @@ export default function App() {
                 <p className="eyebrow">Resource portfolio</p>
                 <h2 className="display light">A broader view<br /><em>of what is possible.</em></h2>
               </div>
-              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to value and partnership.</p>
+              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership.</p>
             </div>
             <div className="deposits-grid">
               {DEPOSITS.map((d, i) => (
@@ -511,7 +527,7 @@ export default function App() {
             <div className="reveal">
               <p className="eyebrow">Industrial metals</p>
               <h2 className="display light">Materials with<br /><em>lasting relevance.</em></h2>
-              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and relationships with deposit holders across Somaliland.</p>
+              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and a disciplined approach to value creation.</p>
               <div className="split-stats">
                 <Counter value={12} label="Resources targeted" />
                 <Counter value={6} label="Project regions" />
@@ -528,7 +544,7 @@ export default function App() {
             <div className="mission-head reveal">
               <p className="eyebrow">Vision and mission</p>
               <h2 className="display">Progress that<br /><em>earns trust.</em></h2>
-              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand our team, connect with miners and deposit holders, and build operations that meet high standards for safety, environmental responsibility, and community value.</p>
+              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand operations through responsible practice, strategic partnerships, and long-term local benefit.</p>
             </div>
             <div className="mission-grid">
               {[
@@ -552,7 +568,7 @@ export default function App() {
             <div className="reveal center-block">
               <p className="eyebrow center">Projects and regions</p>
               <h2 className="display light">The map is<br /><em>still opening.</em></h2>
-              <p className="body-text">Our focus spans Somaliland's six regions, with active opportunity across each. Hover the map to explore.</p>
+              <p className="body-text">Our focus spans Somaliland's six regions, with active opportunity across each. Hover the map to explore access points and operating potential.</p>
             </div>
             <div className="map-section">
               <div className="reveal"><SomalilandMap /></div>
@@ -595,7 +611,7 @@ export default function App() {
             <div className="reveal center-block">
               <p className="eyebrow center">Field notes</p>
               <h2 className="display light">The work is<br /><em>already underway.</em></h2>
-              <p className="body-text">Explore the complete visual archive from the Canva design, including company pages, project visuals, deposit references, ore galleries, and contact artwork. Select any panel to view it full size.</p>
+              <p className="body-text">Explore our field archive from exploration, project sites, mineral sampling, and operating landscapes across Somaliland.</p>
             </div>
           </div>
           <div className="gallery-filters" role="tablist" aria-label="Filter design archive">
@@ -618,7 +634,7 @@ export default function App() {
                   {g.type === 'video' ? (
                     <video src={g.src} muted className="g-video" />
                   ) : (
-                    <img src={g.src} alt={g.label} />
+                    <img src={g.src} alt={g.label} loading="lazy" />
                   )}
                   {g.type === 'video' && <span className="g-video-icon"><Video size={16} /></span>}
                   <span className="g-label">{g.label}</span>
@@ -634,7 +650,7 @@ export default function App() {
             <div className="reveal center-block">
               <p className="eyebrow center">Resource catalogue</p>
               <h2 className="display">A pipeline of<br /><em>possibilities.</em></h2>
-              <p className="body-text">The resources below represent the breadth of Somaliland's mineral potential and the areas we are actively working to understand.</p>
+              <p className="body-text">The resources below represent the breadth of Somaliland's mineral potential and the areas we are actively seeking to develop responsibly.</p>
             </div>
             <div className="mineral-grid reveal">
               {MINERALS.map((m, i) => (
@@ -658,7 +674,7 @@ export default function App() {
             <div className="reveal">
               <p className="eyebrow">Start a conversation</p>
               <h2 className="display light">Bring the right<br /><em>people together.</em></h2>
-              <p className="body-text">We are looking for investors, deposit holders, technical experts, and operating partners who see the potential in Somaliland and want to help develop it responsibly.</p>
+              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it responsibly.</p>
               <div className="contact-info">
                 <a href="mailto:greengemstonemining@gmail.com"><Mail size={16} /> greengemstonemining@gmail.com</a>
                 <span><MapPin size={16} /> Omar Hashi Building, 4th Floor, Hargeisa, Somaliland</span>
