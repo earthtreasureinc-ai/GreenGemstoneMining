@@ -10,7 +10,27 @@ interface MediaPanelProps {
   onUploaded: () => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+interface UploadProgressItem {
+  id: string;
+  name: string;
+  status: 'uploading' | 'success' | 'error';
+  progress: number;
+  message: string;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'video/mp4',
+  'video/quicktime',
+  'video/webm',
+  'video/x-msvideo',
+  'video/ogg',
+];
 
 const CATEGORIES: { value: MediaCategory; label: string }[] = [
   { value: 'hero', label: 'Hero / Banner' },
@@ -24,9 +44,27 @@ const CATEGORIES: { value: MediaCategory; label: string }[] = [
 
 const videoExtensions = ['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v', 'ogg', 'ogv', 'wmv', 'flv'];
 
+const formatBytes = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
 const isVideoFile = (file: File) => {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   return file.type.startsWith('video/') || videoExtensions.includes(ext);
+};
+
+const isAllowedFileType = (file: File) => {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (file.type.startsWith('image/') || file.type.startsWith('video/')) return true;
+  return ALLOWED_FILE_TYPES.includes(file.type) || videoExtensions.includes(ext);
 };
 
 const normalizeFolderSlug = (value: string) => {
@@ -35,10 +73,25 @@ const normalizeFolderSlug = (value: string) => {
     .replace(/\\/+/g, '/')
     .replace(/^\.+/, '')
     .replace(/[^a-zA-Z0-9._/-]/g, '-')
-    .replace(/\/+/g, '/')
-    .replace(/\/{2,}/g, '/');
+    .replace(/\/+/, '/')
+    .replace(/\/\/{2,}/g, '/');
 
   return cleaned.split('/').filter(Boolean).join('/').slice(0, 64) || '';
+};
+
+const humanizeStorageError = (error: { message: string } | null, fallback: string) => {
+  if (!error) return fallback;
+  const message = error.message.toLowerCase();
+  if (message.includes('403') || message.includes('permission')) {
+    return 'Permission denied: check the Supabase bucket policy and make sure the media bucket is public or your session is authorized.';
+  }
+  if (message.includes('409') || message.includes('already exists') || message.includes('conflict')) {
+    return 'A file with that name already exists. Rename the file or allow overwrite.';
+  }
+  if (message.includes('network') || message.includes('failed to fetch')) {
+    return 'Network error while uploading. Please try again.';
+  }
+  return `${fallback}: ${error.message}`;
 };
 
 const deriveFolders = (rows: MediaUpload[], category: MediaCategory) => {
@@ -73,7 +126,10 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<UploadProgressItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -93,6 +149,43 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     setAllMedia(rows);
     setFolders(deriveFolders(rows, uploadCategory));
   }, [uploadCategory]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+
+      if (event.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    const timeout = window.setTimeout(() => modalRef.current?.focus(), 50);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.clearTimeout(timeout);
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
+  }, [open, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -119,6 +212,11 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
       return;
     }
 
+    if (cleaned.startsWith('.') || cleaned.includes('..')) {
+      setStatus({ type: 'error', msg: 'Folder names cannot begin with a dot or contain parent directory references.' });
+      return;
+    }
+
     const folderPath = `${uploadCategory}/${cleaned}/.keep`;
 
     setUploading(true);
@@ -135,7 +233,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     setUploading(false);
 
     if (error) {
-      setStatus({ type: 'error', msg: `Folder creation failed: ${error.message}` });
+      setStatus({ type: 'error', msg: `Folder creation failed: ${humanizeStorageError(error, 'Folder creation failed')}` });
       return;
     }
 
@@ -149,24 +247,39 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const nextFiles = Array.from(files);
+    const nextFiles = Array.from(files).filter((file) => {
+      if (!isAllowedFileType(file)) {
+        setStatus({ type: 'error', msg: `${file.name} is not a supported image or video file.` });
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setStatus({ type: 'error', msg: `${file.name} is too large. Maximum size is ${formatBytes(MAX_FILE_SIZE)}.` });
+        return false;
+      }
+      return true;
+    });
+
+    if (!nextFiles.length) return;
+
+    setUploading(true);
+    setUploadQueue((prev) => [
+      ...prev,
+      ...nextFiles.map((file) => ({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}-${file.name}`,
+        name: file.name,
+        status: 'uploading' as const,
+        progress: 15,
+        message: 'Preparing upload',
+      })),
+    ]);
 
     for (const file of nextFiles) {
-      if (file.size > MAX_FILE_SIZE) {
-        setStatus({
-          type: 'error',
-          msg: `${file.name} is too large. Maximum size is 10MB.`,
-        });
-        continue;
-      }
-
-      const isVideo = isVideoFile(file);
-      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${ext ? `.${ext}` : ''}`;
+      const itemId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}-${file.name}`;
+      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''}`;
       const folderPrefix = selectedFolder ? `${selectedFolder}/` : '';
       const filePath = `${uploadCategory}/${folderPrefix}${safeName}`;
 
-      setUploading(true);
+      setUploadQueue((prev) => prev.map((entry) => (entry.id.includes(file.name) ? { ...entry, progress: 35, message: 'Uploading to storage' } : entry)));
       setStatus({ type: 'info', msg: `Uploading ${file.name}…` });
 
       const { error: uploadError } = await supabase.storage
@@ -177,20 +290,19 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
         });
 
       if (uploadError) {
-        setUploading(false);
-        setStatus({
-          type: 'error',
-          msg: `Upload failed for ${file.name}: ${uploadError.message}. Check your storage bucket permissions and file conflicts.`,
-        });
+        setUploadQueue((prev) => prev.map((entry) => (entry.name === file.name ? { ...entry, status: 'error', progress: 100, message: humanizeStorageError(uploadError, 'Upload failed') } : entry)));
+        setStatus({ type: 'error', msg: humanizeStorageError(uploadError, `Upload failed for ${file.name}`) });
         continue;
       }
+
+      setUploadQueue((prev) => prev.map((entry) => (entry.name === file.name ? { ...entry, progress: 70, message: 'Writing media record' } : entry)));
 
       const { data: urlData } = supabase.storage.from('media').getPublicUrl(filePath);
 
       const { error: insertError } = await supabase.from('media_uploads').insert({
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ''),
         description: uploadDesc || null,
-        media_type: isVideo ? 'video' : 'image',
+        media_type: isVideoFile(file) ? 'video' : 'image',
         storage_path: filePath,
         public_url: urlData.publicUrl,
         category: uploadCategory,
@@ -198,16 +310,17 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
         is_active: true,
       });
 
-      setUploading(false);
-
       if (insertError) {
-        setStatus({ type: 'error', msg: `Database insert failed: ${insertError.message}` });
+        setUploadQueue((prev) => prev.map((entry) => (entry.name === file.name ? { ...entry, status: 'error', progress: 100, message: 'Database insert failed' } : entry)));
+        setStatus({ type: 'error', msg: `Database insert failed for ${file.name}: ${insertError.message}` });
         continue;
       }
 
+      setUploadQueue((prev) => prev.map((entry) => (entry.name === file.name ? { ...entry, status: 'success', progress: 100, message: 'Completed' } : entry)));
       setStatus({ type: 'success', msg: `${file.name} uploaded successfully.` });
     }
 
+    setUploading(false);
     setUploadTitle('');
     setUploadDesc('');
     setFolderDraft('');
@@ -255,7 +368,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="media-modal">
+      <div className="media-modal" ref={modalRef} tabIndex={-1} aria-modal="true" role="dialog">
         <div className="media-modal-header">
           <div>
             <h2>
@@ -288,6 +401,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                   onChange={(e) => setUploadTitle(e.target.value)}
                   placeholder="e.g. Emerald excavation site"
                   className="media-input"
+                  aria-label="Optional title for the media upload"
                 />
               </div>
 
@@ -299,6 +413,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                   onChange={(e) => setUploadDesc(e.target.value)}
                   placeholder="e.g. Field work in Sanaag region"
                   className="media-input"
+                  aria-label="Optional description for the media upload"
                 />
               </div>
 
@@ -312,6 +427,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                     setSelectedFolder('');
                   }}
                   className="media-input media-select"
+                  aria-label="Select media category"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>
@@ -360,6 +476,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                     onChange={(e) => setFolderDraft(e.target.value)}
                     placeholder="New folder name"
                     className="media-input"
+                    aria-label="Create a new folder"
                   />
                   <button type="button" className="media-primary-btn" onClick={handleCreateFolder} disabled={uploading}>
                     <Plus size={14} />
@@ -384,6 +501,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
               className="media-dropzone"
               role="button"
               tabIndex={0}
+              aria-label="Upload media files"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -412,8 +530,25 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                 multiple
                 className="media-file-hidden"
                 onChange={(e) => handleUpload(e.target.files)}
+                aria-label="Choose media files to upload"
               />
             </div>
+
+            {uploadQueue.length > 0 && (
+              <div className="media-progress-list" aria-live="polite">
+                {uploadQueue.map((item) => (
+                  <div key={`${item.id}-${item.name}`} className={`media-progress-item ${item.status}`}>
+                    <div className="media-progress-meta">
+                      <span>{item.name}</span>
+                      <small>{item.message}</small>
+                    </div>
+                    <div className="media-progress-bar">
+                      <span style={{ width: `${item.progress}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {loading ? (
