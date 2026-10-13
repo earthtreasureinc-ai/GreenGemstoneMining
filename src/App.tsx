@@ -193,6 +193,30 @@ function useCountUp(target: number, active: boolean, duration = 1600) {
   return value;
 }
 
+function usePrefersReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('matchMedia' in window)) {
+      setReducedMotion(false);
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(mediaQuery.matches);
+
+    update();
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', update);
+      return () => mediaQuery.removeEventListener('change', update);
+    }
+    mediaQuery.addListener(update);
+    return () => mediaQuery.removeListener(update);
+  }, []);
+
+  return reducedMotion;
+}
+
 function Counter({ value, label }: { value: number; label: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
@@ -224,8 +248,14 @@ function Counter({ value, label }: { value: number; label: string }) {
 
 function Scramble({ text, delay = 0 }: { text: string; delay?: number }) {
   const [display, setDisplay] = useState(text);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      setDisplay(text);
+      return undefined;
+    }
+
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     let raf = 0;
     const timeout = window.setTimeout(() => {
@@ -252,19 +282,22 @@ function Scramble({ text, delay = 0 }: { text: string; delay?: number }) {
       clearTimeout(timeout);
       cancelAnimationFrame(raf);
     };
-  }, [text, delay]);
+  }, [text, delay, reducedMotion]);
 
   return <span className="scramble">{display}</span>;
 }
 
 function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) return undefined;
+
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return undefined;
 
     let raf = 0;
     let w = 0;
@@ -310,15 +343,21 @@ function ParticleCanvas() {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [reducedMotion]);
 
-  return <canvas id="particles" ref={canvasRef} />;
+  return <canvas id="particles" ref={canvasRef} aria-hidden="true" />;
 }
 
 function Crystal3D() {
   const ref = useRef<HTMLDivElement>(null);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      if (ref.current) ref.current.style.transform = 'translateY(-50%) rotateX(0deg) rotateY(0deg)';
+      return undefined;
+    }
+
     const onMove = (event: MouseEvent) => {
       if (!ref.current) return;
       const cx = event.clientX / window.innerWidth - 0.5;
@@ -327,10 +366,10 @@ function Crystal3D() {
     };
     window.addEventListener('mousemove', onMove);
     return () => window.removeEventListener('mousemove', onMove);
-  }, []);
+  }, [reducedMotion]);
 
   return (
-    <div className="crystal-3d">
+    <div className="crystal-3d" aria-hidden="true">
       <div className="crystal-inner" ref={ref}>
         <div className="crystal-face"><Gem size={280} strokeWidth={0.3} /></div>
       </div>
@@ -341,8 +380,14 @@ function Crystal3D() {
 
 function Loader({ done }: { done: boolean }) {
   const [progress, setProgress] = useState(0);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      setProgress(100);
+      return undefined;
+    }
+
     const interval = window.setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
@@ -353,10 +398,10 @@ function Loader({ done }: { done: boolean }) {
       });
     }, 100);
     return () => clearInterval(interval);
-  }, []);
+  }, [reducedMotion]);
 
   return (
-    <div className={`loader ${done ? 'gone' : ''}`}>
+    <div className={`loader ${done ? 'gone' : ''}`} aria-live="polite">
       <div className="loader-gem"><Gem size={48} strokeWidth={0.8} /></div>
       <div className="loader-bar"><span style={{ width: `${Math.min(progress, 100)}%` }} /></div>
       <div className="loader-text">Green Gemstone Mining Company</div>
@@ -411,8 +456,21 @@ export default function App() {
   const [uploadedMedia, setUploadedMedia] = useState<MediaUpload[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string>('All folders');
   const [lightboxItem, setLightboxItem] = useState<{ src: string; type: 'image' | 'video' } | null>(null);
+  const lightboxButtonRef = useRef<HTMLButtonElement>(null);
   const scrolled = useScrollHeader();
   useReveals();
+
+  useEffect(() => {
+    if (!lightboxItem) return undefined;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightboxItem(null);
+    };
+
+    lightboxButtonRef.current?.focus();
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [lightboxItem]);
 
   const fetchUploadedMedia = useCallback(async () => {
     const { data } = await supabase
@@ -502,7 +560,7 @@ export default function App() {
               <Scramble text="Somaliland's" delay={400} />
               <Scramble text="mineral frontier" delay={700} />
             </h1>
-            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland — with a disciplined focus on value, partnership, and local opportunity.</p>
+            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland — with a disciplined, investor-focused approach to long-term value creation.</p>
             <div className="hero-cta">
               <a className="btn btn-gold" href="#contact">Request investor pack <ArrowRight size={16} /></a>
               <a className="btn-ghost" href="#resources">Explore portfolio <ChevronDown size={16} /></a>
@@ -533,7 +591,7 @@ export default function App() {
               <p className="eyebrow">About the company</p>
               <h2 className="display">Built in Somaliland.<br /><em>Ready for global capital.</em></h2>
               <p className="body-lg">Green Gemstone Mining Company combines local geology expertise, disciplined exploration, and a partnership-driven ambition to unlock Somaliland's mineral potential.</p>
-              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities and transparent development practices.</p>
+              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities with clear discipline and transparent execution.</p>
               <p className="body-text">Our diverse local workforce reflects the regions we operate in and the relationships we continue to build around safe, transparent, and sustainable mining practices.</p>
               <a className="link-go" href="#mission">How we work <ArrowRight size={15} /></a>
             </div>
@@ -547,7 +605,7 @@ export default function App() {
                 <p className="eyebrow">Resource portfolio</p>
                 <h2 className="display light">A broader view<br /><em>of what is possible.</em></h2>
               </div>
-              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership-driven growth.</p>
+              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership growth.</p>
             </div>
             <div className="deposits-grid">
               {DEPOSITS.map((deposit, index) => (
@@ -571,7 +629,7 @@ export default function App() {
             <div className="reveal">
               <p className="eyebrow">Industrial metals</p>
               <h2 className="display light">Materials with<br /><em>lasting relevance.</em></h2>
-              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and disciplined development.</p>
+              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and disciplined development planning.</p>
               <div className="split-stats">
                 <Counter value={12} label="Resources targeted" />
                 <Counter value={6} label="Project regions" />
@@ -587,7 +645,7 @@ export default function App() {
             <div className="mission-head reveal">
               <p className="eyebrow">Vision and mission</p>
               <h2 className="display">Progress that<br /><em>earns trust.</em></h2>
-              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand opportunity responsibly.</p>
+              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand opportunities with discipline, responsibility, and long-term thinking.</p>
             </div>
             <div className="mission-grid">
               {[
@@ -755,7 +813,7 @@ export default function App() {
             <div className="reveal">
               <p className="eyebrow">Start a conversation</p>
               <h2 className="display light">Bring the right<br /><em>people together.</em></h2>
-              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it.</p>
+              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it responsibly.</p>
               <div className="contact-info">
                 <a href="mailto:greengemstonemining@gmail.com"><Mail size={16} /> greengemstonemining@gmail.com</a>
                 <span><MapPin size={16} /> Omar Hashi Building, 4th Floor, Hargeisa, Somaliland</span>
@@ -803,7 +861,7 @@ export default function App() {
 
       {lightboxItem && (
         <div className="lightbox" role="dialog" aria-modal="true" onClick={() => setLightboxItem(null)}>
-          <button onClick={() => setLightboxItem(null)} aria-label="Close"><X /></button>
+          <button ref={lightboxButtonRef} onClick={() => setLightboxItem(null)} aria-label="Close"><X /></button>
           {lightboxItem.type === 'video' ? (
             <video src={lightboxItem.src} controls autoPlay className="lightbox-video" onClick={(e) => e.stopPropagation()} />
           ) : (
