@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { MEDIA_BUCKET, type MediaUpload, type MediaCategory } from '@/lib/supabase';
 import { MAX_FILE_SIZE, formatBytes, isAllowedMime, isVideoName, normalizeFolderSlug } from '@/lib/media';
@@ -82,7 +82,6 @@ const deriveFolders = (rows: MediaUpload[], category: MediaCategory) => {
 function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
   const sb = admin.client as SupabaseClient;
   const [allMedia, setAllMedia] = useState<MediaUpload[]>([]);
-  const [folders, setFolders] = useState<{ path: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<MediaCategory>('gallery');
@@ -112,8 +111,7 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
 
     const rows = (data ?? []) as MediaUpload[];
     setAllMedia(rows);
-    setFolders(deriveFolders(rows, uploadCategory));
-  }, [sb, uploadCategory]);
+  }, [sb]);
 
   useEffect(() => {
     if (!open) return;
@@ -154,20 +152,22 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
 
   useEffect(() => {
     if (!open) return;
+    // Fetching when the panel opens is a legitimate effect; it flips the loading flag before the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAll();
   }, [open, fetchAll]);
 
-  useEffect(() => {
-    setFolders(deriveFolders(allMedia, uploadCategory));
-    if (selectedFolder && !allMedia.some((row) => row.storage_path.startsWith(`${uploadCategory}/${selectedFolder}/`))) {
-      setSelectedFolder('');
-    }
-  }, [allMedia, uploadCategory, selectedFolder]);
+  const folders = useMemo(() => deriveFolders(allMedia, uploadCategory), [allMedia, uploadCategory]);
+  // A selected folder only counts while it still holds items in the current category.
+  const activeFolder =
+    selectedFolder && allMedia.some((row) => row.storage_path.startsWith(`${uploadCategory}/${selectedFolder}/`))
+      ? selectedFolder
+      : '';
 
   const visibleMedia = allMedia.filter((item) => {
     if (item.category !== uploadCategory) return false;
-    if (!selectedFolder) return true;
-    return item.storage_path.startsWith(`${uploadCategory}/${selectedFolder}/`);
+    if (!activeFolder) return true;
+    return item.storage_path.startsWith(`${uploadCategory}/${activeFolder}/`);
   });
 
   const handleCreateFolder = async () => {
@@ -241,7 +241,7 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
     for (const file of nextFiles) {
       const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase().replace(/[^a-z0-9.]/g, '') : '';
       const safeName = `${crypto.randomUUID()}${ext}`;
-      const folderPrefix = selectedFolder ? `${selectedFolder}/` : '';
+      const folderPrefix = activeFolder ? `${activeFolder}/` : '';
       const filePath = `${uploadCategory}/${folderPrefix}${safeName}`;
 
       setUploadQueue((prev) => prev.map((entry) => (entry.id.includes(file.name) ? { ...entry, progress: 35, message: 'Uploading to storage' } : entry)));
@@ -415,7 +415,7 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
               <div className="media-folder-toolbar">
                 <div className="media-folder-list">
                   <button
-                    className={`media-folder-button ${!selectedFolder ? 'active' : ''}`}
+                    className={`media-folder-button ${!activeFolder ? 'active' : ''}`}
                     type="button"
                     onClick={() => setSelectedFolder('')}
                   >
@@ -426,7 +426,7 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
                     <button
                       key={folder.path}
                       type="button"
-                      className={`media-folder-button ${selectedFolder === folder.path.replace(`${uploadCategory}/`, '') ? 'active' : ''}`}
+                      className={`media-folder-button ${activeFolder === folder.path.replace(`${uploadCategory}/`, '') ? 'active' : ''}`}
                       onClick={() => setSelectedFolder(folder.path.replace(`${uploadCategory}/`, ''))}
                     >
                       {folder.path.replace(`${uploadCategory}/`, '')}
@@ -453,7 +453,7 @@ function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
 
               <div className="media-folder-target">
                 Upload target:
-                <strong>{selectedFolder ? `${uploadCategory}/${selectedFolder}` : `${uploadCategory}/root`}</strong>
+                <strong>{activeFolder ? `${uploadCategory}/${activeFolder}` : `${uploadCategory}/root`}</strong>
               </div>
             </div>
 

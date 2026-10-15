@@ -31,6 +31,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initial = detectLanguage();
+    // Language detection needs browser APIs (URL, storage, navigator), so it can only run after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load(initial);
     // Make the URL match the language (e.g. a Somali browser landing on "/").
     if (langFromPath(window.location.pathname) !== (initial === 'en' ? null : initial)) {
