@@ -34,8 +34,10 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          supabase: ['@supabase/supabase-js'],
+        // Keep the Supabase client in its own chunk so it loads only when needed.
+        manualChunks(id: string) {
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+          return undefined;
         },
       },
     },
