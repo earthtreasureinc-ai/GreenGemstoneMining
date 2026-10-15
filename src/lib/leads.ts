@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export const INTERESTS = [
   'Investment',
@@ -41,6 +41,7 @@ export type SubmitResult = { ok: true } | { ok: false; reason: 'unavailable' | '
 export async function submitLead(input: LeadInput): Promise<SubmitResult> {
   // Bots tend to fill every field: pretend success, store nothing.
   if (input.website.trim() !== '') return { ok: true };
+  const supabase = await getSupabase();
   if (!supabase) return { ok: false, reason: 'unavailable' };
 
   try {

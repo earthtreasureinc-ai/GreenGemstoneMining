@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase, type MediaUpload } from '@/lib/supabase';
+import { getSupabase, type MediaUpload } from '@/lib/supabase';
 
-/** Public, active uploads for the gallery. Silent no-op when Supabase is not configured. */
+/** Public, active uploads for the gallery. Loaded when the browser is idle; no-op without Supabase. */
 export function useUploads() {
   const [uploads, setUploads] = useState<MediaUpload[]>([]);
 
   const refresh = useCallback(async () => {
+    const supabase = await getSupabase();
     if (!supabase) return;
     const { data, error } = await supabase
       .from('media_uploads')
@@ -17,7 +18,13 @@ export function useUploads() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    if (idle) {
+      idle(() => void refresh());
+      return undefined;
+    }
+    const t = window.setTimeout(() => void refresh(), 1500);
+    return () => window.clearTimeout(t);
   }, [refresh]);
 
   return { uploads, refresh };

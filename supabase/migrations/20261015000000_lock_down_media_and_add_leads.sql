@@ -84,3 +84,22 @@ create policy "anyone_can_submit_lead" on public.leads for insert to anon, authe
 drop policy if exists "admins_read_leads" on public.leads;
 create policy "admins_read_leads" on public.leads for select to authenticated using (public.is_admin());
 revoke select, update, delete on public.leads from anon;
+
+-- Simple abuse limits: 3 enquiries per email per hour, 200 per hour overall.
+create or replace function public.limit_lead_rate()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if (select count(*) from public.leads where email = new.email and created_at > now() - interval '1 hour') >= 3
+     or (select count(*) from public.leads where created_at > now() - interval '1 hour') >= 200 then
+    raise exception 'rate limit exceeded' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists leads_rate_limit on public.leads;
+create trigger leads_rate_limit before insert on public.leads for each row execute function public.limit_lead_rate();
+create index if not exists leads_email_created_idx on public.leads (email, created_at);

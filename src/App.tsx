@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from 'react';
-import { ArrowRight, ArrowUpRight, ChevronDown, Gem, Linkedin, Mail, MapPin, Menu, X } from 'lucide-react';
+import { Atom, ArrowRight, ArrowUpRight, ChevronDown, Gem, Hammer, Linkedin, Mail, MapPin, Menu, Mountain, X } from 'lucide-react';
 import Gallery from '@/components/Gallery';
 import ContactForm from '@/components/ContactForm';
 import SomalilandMap from '@/components/SomalilandMap';
@@ -11,6 +11,9 @@ import { useScrollHeader } from '@/hooks/useScrollHeader';
 import { useUploads } from '@/hooks/useUploads';
 import { supabaseConfigured } from '@/lib/supabase';
 
+const DEPOSIT_ICONS = { gem: Gem, atom: Atom, hammer: Hammer, mountain: Mountain } as const;
+const METALS = MINERALS.filter((m) => m.cat === 'Metal' || m.cat === 'Precious');
+
 const MediaPanel = lazy(() => import('@/components/MediaPanel'));
 
 export default function App() {
@@ -18,7 +21,7 @@ export default function App() {
   const [mediaOpen, setMediaOpen] = useState(false);
   const scrolled = useScrollHeader();
   const { uploads, refresh } = useUploads();
-  const admin = useAdminSession();
+  const admin = useAdminSession(mediaOpen);
   useReveals();
 
   return (
@@ -47,6 +50,7 @@ export default function App() {
 
       <main id="main">
         <section id="top" className="hero">
+          <img className="hero-bg" src={IMAGES.company} alt="" width={806} height={536} fetchPriority="high" />
           <div className="hero-overlay" />
           <Crystal3D />
           <div className="hero-inner">
@@ -102,7 +106,7 @@ export default function App() {
             <div className="deposits-grid">
               {DEPOSITS.map((deposit, index) => (
                 <article className="deposit reveal" key={deposit.name} style={{ transitionDelay: `${index * 100}ms` }}>
-                  <img src={deposit.img} alt={deposit.name} width={1366} height={768} loading="lazy" decoding="async" />
+                  <div className={`deposit-art tone-${deposit.tone}`} aria-hidden="true">{(() => { const Icon = DEPOSIT_ICONS[deposit.icon]; return <Icon size={96} strokeWidth={0.6} />; })()}</div>
                   <span className="deposit-tag">{deposit.tag}</span>
                   <div className="deposit-body">
                     <h3>{deposit.name}</h3>
@@ -116,7 +120,7 @@ export default function App() {
         </section>
 
         <section className="split">
-          <div className="split-img"><img src={IMAGES.split} alt="Industrial metal deposits overview" width={1366} height={768} loading="lazy" /></div>
+          <div className="split-img split-panel"><ul aria-label="Metals in our portfolio">{METALS.map((m) => <li key={m.name}>{m.name}</li>)}</ul></div>
           <div className="split-text">
             <div className="reveal">
               <p className="eyebrow">Industrial metals</p>
@@ -124,7 +128,7 @@ export default function App() {
               <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and disciplined development planning.</p>
               <div className="split-stats">
                 <Counter value={12} label="Resources targeted" />
-                <Counter value={6} label="Project regions" />
+                <Counter value={6} label="Project regions" plus={false} />
                 <Counter value={2018} label="Operating since" plus={false} />
               </div>
               <a className="btn btn-gold" href="#projects">See project regions <ArrowRight size={16} /></a>
@@ -228,7 +232,6 @@ export default function App() {
 
         <section id="contact" className="contact-sec">
           <div className="contact-visual">
-            <img src={IMAGES.contact} alt="" width={1366} height={768} loading="lazy" />
             <div className="contact-stamp">Come visit<strong>Somaliland</strong></div>
           </div>
           <div className="contact-panel">
@@ -242,6 +245,7 @@ export default function App() {
                 {SITE.linkedin && <a href={SITE.linkedin} rel="noopener noreferrer" target="_blank"><Linkedin size={16} aria-hidden="true" /> LinkedIn</a>}
               </div>
               <ContactForm />
+              <p className="privacy-note">We use your details only to reply to your enquiry and do not share them. See our <a href="#privacy">privacy notice</a>.</p>
             </div>
           </div>
         </section>
@@ -254,19 +258,19 @@ export default function App() {
             <p className="footer-tag">Responsible mining. Lasting value. A stronger Somaliland built from the ground up.</p>
           </div>
           <div className="footer-col">
-            <h4>Company</h4>
+            <h3>Company</h3>
             <a href="#company">About us</a>
             <a href="#mission">Mission</a>
             <a href="#projects">Projects</a>
           </div>
           <div className="footer-col">
-            <h4>Resources</h4>
+            <h3>Resources</h3>
             <a href="#resources">Deposits</a>
             <a href="#gallery">Gallery</a>
             <a href="#contact">Contact</a>
           </div>
           <div className="footer-col">
-            <h4>Connect</h4>
+            <h3>Connect</h3>
             <a href={`mailto:${SITE.email}`}>Email</a>
             {SITE.linkedin && <a href={SITE.linkedin} rel="noopener noreferrer" target="_blank">LinkedIn</a>}
             <a href="#contact">Partner with us</a>
@@ -277,6 +281,10 @@ export default function App() {
           <span>Hargeisa · Somaliland</span>
           {supabaseConfigured && <button type="button" className="owner-link" onClick={() => setMediaOpen(true)}>Owner login</button>}
         </div>
+        <section id="privacy" className="privacy">
+          <h3>Privacy notice</h3>
+          <p>When you send an enquiry we store your name, email, company, interest and message so that {SITE.name} can respond. We do not sell or share this information, and we keep it only as long as needed to handle your enquiry. To see or delete your details, email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+        </section>
       </footer>
     </div>
   );

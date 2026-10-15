@@ -1,12 +1,13 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { MEDIA_BUCKET, supabase, type MediaUpload, type MediaCategory } from '@/lib/supabase';
+import { MEDIA_BUCKET, type MediaUpload, type MediaCategory } from '@/lib/supabase';
 import { MAX_FILE_SIZE, formatBytes, isAllowedMime, isVideoName, normalizeFolderSlug } from '@/lib/media';
 import {
   X, Upload, Trash2, Image as ImageIcon, Video, Loader2, Check, Gem, Folder, Plus,
 } from 'lucide-react';
 
 interface AdminSession {
+  client: SupabaseClient | null;
   email: string | null;
   isAdmin: boolean;
   checking: boolean;
@@ -79,7 +80,7 @@ const deriveFolders = (rows: MediaUpload[], category: MediaCategory) => {
 };
 
 function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
-  const sb = supabase as SupabaseClient;
+  const sb = admin.client as SupabaseClient;
   const [allMedia, setAllMedia] = useState<MediaUpload[]>([]);
   const [folders, setFolders] = useState<{ path: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -645,6 +646,6 @@ function OwnerLogin({ onClose, admin }: Pick<MediaPanelProps, 'onClose' | 'admin
 
 export default function MediaPanel(props: MediaPanelProps) {
   if (!props.open) return null;
-  if (!supabase || !props.admin.isAdmin) return <OwnerLogin onClose={props.onClose} admin={props.admin} />;
+  if (!props.admin.client || !props.admin.isAdmin) return <OwnerLogin onClose={props.onClose} admin={props.admin} />;
   return <MediaManager {...props} />;
 }

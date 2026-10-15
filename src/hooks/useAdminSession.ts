@@ -1,43 +1,58 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabase, supabaseConfigured } from '@/lib/supabase';
 
-/** Tracks the Supabase Auth session and whether that user is listed in `admin_users`. */
-export function useAdminSession() {
+/**
+ * Supabase Auth session + whether that user is listed in `admin_users`.
+ * Only starts once `enabled` is true (the owner opens the login), keeping auth off the first load.
+ */
+export function useAdminSession(enabled: boolean) {
+  const [client, setClient] = useState<SupabaseClient | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [checking, setChecking] = useState(Boolean(supabase));
+  const [checking, setChecking] = useState(supabaseConfigured);
 
-  const check = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase.auth.getSession();
+  const check = useCallback(async (sb: SupabaseClient) => {
+    const { data } = await sb.auth.getSession();
     const user = data.session?.user ?? null;
     setEmail(user?.email ?? null);
     if (!user) {
       setIsAdmin(false);
-      setChecking(false);
-      return;
+    } else {
+      const { data: ok } = await sb.rpc('is_admin');
+      setIsAdmin(ok === true);
     }
-    const { data: ok } = await supabase.rpc('is_admin');
-    setIsAdmin(ok === true);
     setChecking(false);
   }, []);
 
   useEffect(() => {
-    if (!supabase) return undefined;
-    void check();
-    const { data } = supabase.auth.onAuthStateChange(() => void check());
-    return () => data.subscription.unsubscribe();
-  }, [check]);
+    if (!enabled) return undefined;
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+    void getSupabase().then((sb) => {
+      if (cancelled || !sb) {
+        setChecking(false);
+        return;
+      }
+      setClient(sb);
+      void check(sb);
+      unsubscribe = sb.auth.onAuthStateChange(() => void check(sb)).data.subscription.unsubscribe;
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [enabled, check]);
 
   const signIn = useCallback(async (e: string, password: string) => {
-    if (!supabase) return 'Media management is not configured.';
-    const { error } = await supabase.auth.signInWithPassword({ email: e, password });
+    if (!client) return 'Media management is not configured.';
+    const { error } = await client.auth.signInWithPassword({ email: e, password });
     return error ? 'Sign-in failed. Check your email and password.' : null;
-  }, []);
+  }, [client]);
 
   const signOut = useCallback(async () => {
-    if (supabase) await supabase.auth.signOut();
-  }, []);
+    await client?.auth.signOut();
+  }, [client]);
 
-  return { email, isAdmin, checking, signIn, signOut };
+  return { client, email, isAdmin, checking, signIn, signOut };
 }

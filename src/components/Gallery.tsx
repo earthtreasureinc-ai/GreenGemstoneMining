@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Video, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Video, X } from 'lucide-react';
 import { GALLERY, GALLERY_GROUPS } from '@/data/site';
 import { getUploadFolderName, matchesGalleryFilter, type GalleryFilter, type GalleryItem } from '@/lib/media';
 import type { MediaUpload } from '@/lib/supabase';
@@ -12,6 +12,8 @@ export default function Gallery({ uploads }: { uploads: MediaUpload[] }) {
   const [folder, setFolder] = useState('All folders');
   const [open, setOpen] = useState<GalleryItem | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const scrollBy = (dir: number) => scroller.current?.scrollBy({ left: dir * 480, behavior: 'smooth' });
   const returnFocus = useRef<HTMLElement | null>(null);
 
   const uploadItems: GalleryItem[] = useMemo(
@@ -61,14 +63,21 @@ export default function Gallery({ uploads }: { uploads: MediaUpload[] }) {
           ))}
         </div>
       )}
-      <div className="gallery-h reveal in">
+      <div className="gallery-nav">
+        <span aria-live="polite">{visible.length} {visible.length === 1 ? 'item' : 'items'}</span>
+        <div>
+          <button type="button" onClick={() => scrollBy(-1)} aria-label="Scroll gallery left"><ChevronLeft size={18} /></button>
+          <button type="button" onClick={() => scrollBy(1)} aria-label="Scroll gallery right"><ChevronRight size={18} /></button>
+        </div>
+      </div>
+      <div className="gallery-h reveal in" ref={scroller} tabIndex={0} role="region" aria-label="Gallery images">
         <div className="gallery-track">
           {visible.map((item, i) => (
-            <button key={`${item.src}-${i}`} type="button" className={`g-item ${WIDTHS[i % 3]}`} onClick={() => setOpen(item)} aria-label={`Open ${item.label}`}>
+            <button key={`${item.src}-${i}`} type="button" className={`g-item ${WIDTHS[i % 3]}`} onClick={() => setOpen(item)}>
               {item.type === 'video' ? (
                 <video src={item.src} muted preload="metadata" className="g-video" />
               ) : (
-                <img src={item.src} alt={item.label} width={item.width} height={item.height} loading="lazy" decoding="async" />
+                <img src={item.src} alt="" width={item.width} height={item.height} loading="lazy" decoding="async" />
               )}
               {item.type === 'video' && <span className="g-video-icon"><Video size={16} /></span>}
               {item.folder && <span className="g-folder-tag">{item.folder}</span>}

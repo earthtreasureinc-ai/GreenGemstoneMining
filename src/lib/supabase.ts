@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -6,13 +6,18 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 /** True when both public Supabase settings are present at build time. */
 export const supabaseConfigured = Boolean(url && anonKey);
 
+let clientPromise: Promise<SupabaseClient | null> | null = null;
+
 /**
- * Browser client using the public anon key only.
- * `null` when the env vars are missing, so the static site still renders
- * (gallery uploads and the contact form degrade gracefully instead of crashing).
+ * Browser client using the public anon key only, loaded on demand so the Supabase
+ * SDK stays off the critical path. Resolves to `null` when env vars are missing, so
+ * the static site still renders (uploads and the enquiry form degrade gracefully).
  */
-export const supabase: SupabaseClient | null =
-  url && anonKey ? createClient(url, anonKey) : null;
+export function getSupabase(): Promise<SupabaseClient | null> {
+  if (!supabaseConfigured) return Promise.resolve(null);
+  clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) => createClient(url as string, anonKey as string));
+  return clientPromise;
+}
 
 export const MEDIA_BUCKET = 'media';
 
