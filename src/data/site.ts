@@ -5,24 +5,15 @@ const IMG = '/assets/images';
 export const SITE = {
   name: 'Green Gemstone Mining Company',
   email: 'greengemstonemining@gmail.com',
-  address: 'Omar Hashi Building, 4th Floor, Hargeisa, Somaliland',
   linkedin: '' as string, // TODO(owner): add the real LinkedIn company URL; the link is hidden while empty.
 };
 
-export const NAV = [
-  { label: 'Overview', href: '#top' },
-  { label: 'Company', href: '#company' },
-  { label: 'Portfolio', href: '#resources' },
-  { label: 'Projects', href: '#projects' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'Contact', href: '#contact' },
-];
-
-export const DEPOSITS: { name: string; desc: string; tone: string; icon: 'gem' | 'atom' | 'hammer' | 'mountain'; tag: string }[] = [
-  { name: 'Gemstone Deposits', desc: 'Emeralds and high-value stones with a disciplined path from discovery to development.', tone: 'emerald', icon: 'gem', tag: 'Precious' },
-  { name: 'Rare Earth Deposits', desc: 'Strategic minerals positioned for the industries shaping a more connected future.', tone: 'violet', icon: 'atom', tag: 'Strategic' },
-  { name: 'Industrial Metal Deposits', desc: 'Copper, gold, lithium, tantalum, chromite and lead, diversified across Somaliland.', tone: 'copper', icon: 'hammer', tag: 'Industrial' },
-  { name: 'Non-Metal Deposits', desc: 'Practical resources supporting construction, manufacturing, and regional growth.', tone: 'slate', icon: 'mountain', tag: 'Industrial' },
+/** Visual identity per deposit card; the words live in src/i18n/*.ts (same order). */
+export const DEPOSITS: { tone: string; icon: 'gem' | 'atom' | 'hammer' | 'mountain' }[] = [
+  { tone: 'emerald', icon: 'gem' },
+  { tone: 'violet', icon: 'atom' },
+  { tone: 'copper', icon: 'hammer' },
+  { tone: 'slate', icon: 'mountain' },
 ];
 
 export const MINERALS = [
@@ -50,21 +41,8 @@ export const REGIONS = [
   { name: 'Sool', x: 440, y: 210, w: 140, h: 80 },
 ];
 
-export const HERO_METRICS = [
-  { value: '6', label: 'Regions of interest' },
-  { value: '12', label: 'Mineral verticals' },
-  { value: '2018', label: 'Founded' },
-  { value: 'Global', label: 'Partnership focus' },
-];
-
-export const TIMELINE = [
-  { year: '2018', title: 'Founded', desc: 'Initial investment and first geological survey in Somaliland.' },
-  { year: '2020', title: 'First project', desc: 'First mining project launched.' },
-  { year: '2022', title: 'Emerald deposit', desc: 'Reached an emerald deposit and expanded exploration.' },
-  { year: '2025', title: 'Gold processing', desc: 'Gold processing plant received.' },
-];
-
-export const MARQUEE = ['Responsible', 'Locally rooted', 'Globally ambitious', 'Resource focused', 'Partnership driven', 'Built to last'];
+/** Years only; titles and descriptions live in src/i18n/*.ts (same order). */
+export const TIMELINE = [{ year: '2018' }, { year: '2020' }, { year: '2022' }, { year: '2025' }];
 
 export const GALLERY_GROUPS: GalleryGroup[] = ['Company', 'Ore gallery', 'Gemstones', 'Field gallery', 'My uploads'];
 

@@ -29,3 +29,7 @@ Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (all ru
 - Real LinkedIn URL in `src/data/site.ts` (`SITE.linkedin`).
 - Real project and field photos (current gallery images are exported presentation slides).
 - Verified figures and licence/permit details before presenting to investors.
+
+## Languages
+
+English, 中文 (Simplified Chinese), Soomaali and العربية (right-to-left). Text lives in `src/i18n/{en,zh,so,ar}.ts`; `en.ts` defines the shape and TypeScript rejects missing keys. Each language has its own URL (`/zh/`, `/so/`, `/ar/`), remembered per visitor, with hreflang tags and sitemap alternates (set `VITE_SITE_URL`). The Somali, Arabic and Chinese texts are drafts: have native speakers review them, especially mining and legal wording, before showing investors. The owner media panel stays English.

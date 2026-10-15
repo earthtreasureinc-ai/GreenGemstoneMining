@@ -4,7 +4,9 @@ import Gallery from '@/components/Gallery';
 import ContactForm from '@/components/ContactForm';
 import SomalilandMap from '@/components/SomalilandMap';
 import { Counter, Crystal3D, ScrollProgress } from '@/components/Effects';
-import { DEPOSITS, HERO_METRICS, IMAGES, MARQUEE, MINERALS, NAV, REGIONS, SITE, TIMELINE } from '@/data/site';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { DEPOSITS, IMAGES, MINERALS, REGIONS, SITE, TIMELINE } from '@/data/site';
+import { useI18n } from '@/i18n/core';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { useReveals } from '@/hooks/useReveals';
 import { useScrollHeader } from '@/hooks/useScrollHeader';
@@ -14,11 +16,21 @@ import { supabaseConfigured } from '@/lib/supabase';
 const DEPOSIT_ICONS = { gem: Gem, atom: Atom, hammer: Hammer, mountain: Mountain } as const;
 const METALS = MINERALS.filter((m) => m.cat === 'Metal' || m.cat === 'Precious');
 
+const NAV_LINKS = [
+  ['overview', '#top'],
+  ['company', '#company'],
+  ['portfolio', '#resources'],
+  ['projects', '#projects'],
+  ['gallery', '#gallery'],
+  ['contact', '#contact'],
+] as const;
+
 const MediaPanel = lazy(() => import('@/components/MediaPanel'));
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const { t } = useI18n();
   const scrolled = useScrollHeader();
   const { uploads, refresh } = useUploads();
   const admin = useAdminSession(mediaOpen);
@@ -26,18 +38,19 @@ export default function App() {
 
   return (
     <div className="app">
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">{t.ui.skip}</a>
       <ScrollProgress />
 
       <header className={`hdr ${scrolled || menuOpen ? 'scrolled' : ''}`}>
         <a className="hdr-brand" href="#top"><Gem size={22} aria-hidden="true" /><span>Green Gemstone</span></a>
-        <nav id="main-nav" className={`hdr-nav ${menuOpen ? 'open' : ''}`} aria-label="Main navigation">
-          {NAV.map((item) => (
-            <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
+        <nav id="main-nav" className={`hdr-nav ${menuOpen ? 'open' : ''}`} aria-label={t.ui.mainNav}>
+          {NAV_LINKS.map(([key, href]) => (
+            <a key={href} href={href} onClick={() => setMenuOpen(false)}>{t.nav[key]}</a>
           ))}
-          <a className="hdr-cta" href="#contact" onClick={() => setMenuOpen(false)}>Partner with us <ArrowUpRight size={14} aria-hidden="true" /></a>
+          <LanguageSwitcher />
+          <a className="hdr-cta" href="#contact" onClick={() => setMenuOpen(false)}>{t.nav.cta} <ArrowUpRight size={14} aria-hidden="true" /></a>
         </nav>
-        <button type="button" className="hdr-burger" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>
+        <button type="button" className="hdr-burger" aria-expanded={menuOpen} aria-controls="main-nav" onClick={() => setMenuOpen((v) => !v)} aria-label={menuOpen ? t.ui.menuClose : t.ui.menuOpen}>
           {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
       </header>
@@ -54,15 +67,15 @@ export default function App() {
           <div className="hero-overlay" />
           <Crystal3D />
           <div className="hero-inner">
-            <p className="hero-kicker">Somaliland • Strategic mineral development</p>
-            <h1>Somaliland&apos;s <span className="h1-line">mineral frontier</span></h1>
-            <p className="hero-sub">Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland, with a disciplined, investor-focused approach to long-term value creation.</p>
+            <p className="hero-kicker">{t.hero.kicker}</p>
+            <h1>{t.hero.h1a} <span className="h1-line">{t.hero.h1b}</span></h1>
+            <p className="hero-sub">{t.hero.sub}</p>
             <div className="hero-cta">
-              <a className="btn btn-gold" href="#contact">Request investor information <ArrowRight size={16} aria-hidden="true" /></a>
-              <a className="btn-ghost" href="#resources">Explore portfolio <ChevronDown size={16} aria-hidden="true" /></a>
+              <a className="btn btn-gold" href="#contact">{t.hero.primary} <ArrowRight size={16} aria-hidden="true" /></a>
+              <a className="btn-ghost" href="#resources">{t.hero.secondary} <ChevronDown size={16} aria-hidden="true" /></a>
             </div>
             <div className="hero-metrics">
-              {HERO_METRICS.map((metric) => (
+              {t.hero.metrics.map((metric) => (
                 <div key={metric.label} className="metric-card">
                   <strong>{metric.value}</strong>
                   <span>{metric.label}</span>
@@ -70,26 +83,26 @@ export default function App() {
               ))}
             </div>
           </div>
-          <div className="hero-foot"><span>Responsible mining. Lasting value.</span></div>
+          <div className="hero-foot"><span>{t.hero.foot}</span></div>
         </section>
 
         <section className="marquee">
-          <div className="marquee-track">{[...MARQUEE, ...MARQUEE].map((word, i) => <span key={`${word}-${i}`}><Gem size={12} /> {word}</span>)}</div>
+          <div className="marquee-track">{[...t.marquee, ...t.marquee].map((word, i) => <span key={`${word}-${i}`}><Gem size={12} /> {word}</span>)}</div>
         </section>
 
         <section id="company" className="sec">
           <div className="sec-container company">
             <div className="company-visual reveal">
-              <img src={IMAGES.company} alt="Green Gemstone Mining team member in the field, Somaliland" width={806} height={536} loading="lazy" />
-              <div className="company-badge">On the ground<br />in Somaliland</div>
+              <img src={IMAGES.company} alt={t.company.imgAlt} width={806} height={536} loading="lazy" />
+              <div className="company-badge">{t.company.badge1}<br />{t.company.badge2}</div>
             </div>
             <div className="company-text reveal" style={{ transitionDelay: '120ms' }}>
-              <p className="eyebrow">About the company</p>
-              <h2 className="display">Built in Somaliland.<br /><em>Ready for global capital.</em></h2>
-              <p className="body-lg">Green Gemstone Mining Company combines local geology expertise, disciplined exploration, and a partnership-driven ambition to unlock Somaliland's mineral potential.</p>
-              <p className="body-text">We are building a platform that creates long-term value for investors, local communities, and strategic partners — focusing on high-potential mineral opportunities with clear discipline and transparent execution.</p>
-              <p className="body-text">Our diverse local workforce reflects the regions we operate in and the relationships we continue to build around safe, transparent, and sustainable mining practices.</p>
-              <a className="link-go" href="#mission">How we work <ArrowRight size={15} /></a>
+              <p className="eyebrow">{t.company.eyebrow}</p>
+              <h2 className="display">{t.company.h2a}<br /><em>{t.company.h2b}</em></h2>
+              <p className="body-lg">{t.company.lead}</p>
+              <p className="body-text">{t.company.p1}</p>
+              <p className="body-text">{t.company.p2}</p>
+              <a className="link-go" href="#mission">{t.company.link} <ArrowRight size={15} /></a>
             </div>
           </div>
         </section>
@@ -98,40 +111,43 @@ export default function App() {
           <div className="sec-container">
             <div className="deposits-head reveal">
               <div>
-                <p className="eyebrow">Resource portfolio</p>
-                <h2 className="display light">A broader view<br /><em>of what is possible.</em></h2>
+                <p className="eyebrow">{t.resources.eyebrow}</p>
+                <h2 className="display light">{t.resources.h2a}<br /><em>{t.resources.h2b}</em></h2>
               </div>
-              <p>Our portfolio is intentionally diversified — gemstones, rare earths, industrial metals, and non-metal deposits — creating multiple pathways to long-term value and partnership growth.</p>
+              <p>{t.resources.intro}</p>
             </div>
             <div className="deposits-grid">
-              {DEPOSITS.map((deposit, index) => (
-                <article className="deposit reveal" key={deposit.name} style={{ transitionDelay: `${index * 100}ms` }}>
+              {DEPOSITS.map((deposit, index) => {
+                const text = t.resources.deposits[index];
+                return (
+                <article className="deposit reveal" key={text.name} style={{ transitionDelay: `${index * 100}ms` }}>
                   <div className={`deposit-art tone-${deposit.tone}`} aria-hidden="true">{(() => { const Icon = DEPOSIT_ICONS[deposit.icon]; return <Icon size={96} strokeWidth={0.6} />; })()}</div>
-                  <span className="deposit-tag">{deposit.tag}</span>
+                  <span className="deposit-tag">{text.tag}</span>
                   <div className="deposit-body">
-                    <h3>{deposit.name}</h3>
-                    <p>{deposit.desc}</p>
-                    <a href="#contact">Discuss this focus <ArrowUpRight size={14} /></a>
+                    <h3>{text.name}</h3>
+                    <p>{text.desc}</p>
+                    <a href="#contact">{t.resources.discuss} <ArrowUpRight size={14} /></a>
                   </div>
                 </article>
-              ))}
+              );
+              })}
             </div>
           </div>
         </section>
 
         <section className="split">
-          <div className="split-img split-panel"><ul aria-label="Metals in our portfolio">{METALS.map((m) => <li key={m.name}>{m.name}</li>)}</ul></div>
+          <div className="split-img split-panel"><ul aria-label={t.industrial.listLabel}>{METALS.map((m) => <li key={m.name}>{t.catalogue.minerals[m.name] ?? m.name}</li>)}</ul></div>
           <div className="split-text">
             <div className="reveal">
-              <p className="eyebrow">Industrial metals</p>
-              <h2 className="display light">Materials with<br /><em>lasting relevance.</em></h2>
-              <p className="body-text">Our strategy spans both precious and non-precious metals — from copper and gold to lithium, tantalum, and chromite — supported by ongoing exploration and disciplined development planning.</p>
+              <p className="eyebrow">{t.industrial.eyebrow}</p>
+              <h2 className="display light">{t.industrial.h2a}<br /><em>{t.industrial.h2b}</em></h2>
+              <p className="body-text">{t.industrial.text}</p>
               <div className="split-stats">
-                <Counter value={12} label="Resources targeted" />
-                <Counter value={6} label="Project regions" plus={false} />
-                <Counter value={2018} label="Operating since" plus={false} />
+                <Counter value={12} label={t.industrial.stats[0]} />
+                <Counter value={6} label={t.industrial.stats[1]} plus={false} />
+                <Counter value={2018} label={t.industrial.stats[2]} plus={false} />
               </div>
-              <a className="btn btn-gold" href="#projects">See project regions <ArrowRight size={16} /></a>
+              <a className="btn btn-gold" href="#projects">{t.industrial.cta} <ArrowRight size={16} /></a>
             </div>
           </div>
         </section>
@@ -139,18 +155,14 @@ export default function App() {
         <section id="mission" className="sec">
           <div className="sec-container">
             <div className="mission-head reveal">
-              <p className="eyebrow">Vision and mission</p>
-              <h2 className="display">Progress that<br /><em>earns trust.</em></h2>
-              <p className="body-text">We want Somaliland to be recognized not only for the quality of its resources, but for the quality of the way they are developed. Our mission is to expand opportunities with discipline, responsibility, and long-term thinking.</p>
+              <p className="eyebrow">{t.mission.eyebrow}</p>
+              <h2 className="display">{t.mission.h2a}<br /><em>{t.mission.h2b}</em></h2>
+              <p className="body-text">{t.mission.text}</p>
             </div>
             <div className="mission-grid">
-              {[
-                { n: '01', t: 'Understand the ground', d: 'Start with local insight, serious fieldwork, and a clear-eyed view of what is possible.' },
-                { n: '02', t: 'Build the right partnerships', d: 'Bring investors, technical experts, operators, and resource owners together around real projects.' },
-                { n: '03', t: 'Create lasting value', d: 'Grow local skills, protect people and place, and build benefits that extend well beyond the mine site.' },
-              ].map((point, index) => (
-                <div className="mission-card reveal" key={point.n} style={{ transitionDelay: `${index * 120}ms` }}>
-                  <span className="num">{point.n}</span>
+              {t.mission.points.map((point, index) => (
+                <div className="mission-card reveal" key={index} style={{ transitionDelay: `${index * 120}ms` }}>
+                  <span className="num">{String(index + 1).padStart(2, '0')}</span>
                   <h3>{point.t}</h3>
                   <p>{point.d}</p>
                 </div>
@@ -162,9 +174,9 @@ export default function App() {
         <section id="projects" className="sec sec-dark">
           <div className="sec-container">
             <div className="reveal center-block">
-              <p className="eyebrow center">Projects and regions</p>
-              <h2 className="display light">The map is<br /><em>still opening.</em></h2>
-              <p className="body-text">Our focus spans Somaliland's six regions, with active opportunity across each. Select a region below to enquire about it. The diagram is schematic, not a surveyed map.</p>
+              <p className="eyebrow center">{t.projects.eyebrow}</p>
+              <h2 className="display light">{t.projects.h2a}<br /><em>{t.projects.h2b}</em></h2>
+              <p className="body-text">{t.projects.text}</p>
             </div>
             <div className="map-section">
               <div className="reveal"><SomalilandMap /></div>
@@ -172,7 +184,7 @@ export default function App() {
                 {REGIONS.map((region, index) => (
                   <a key={region.name} href="#contact" className="map-legend-item" style={{ transitionDelay: `${index * 60}ms` }}>
                     <span className="dot" />
-                    <div><strong>{region.name}</strong><small>Region of interest</small></div>
+                    <div><strong>{region.name}</strong><small>{t.projects.legend}</small></div>
                     <ArrowUpRight size={18} className="go" />
                   </a>
                 ))}
@@ -184,16 +196,16 @@ export default function App() {
         <section className="sec">
           <div className="sec-container">
             <div className="reveal center-block">
-              <p className="eyebrow center">Our history</p>
-              <h2 className="display">A young company<br /><em>with momentum.</em></h2>
+              <p className="eyebrow center">{t.history.eyebrow}</p>
+              <h2 className="display">{t.history.h2a}<br /><em>{t.history.h2b}</em></h2>
             </div>
             <div className="timeline-rail">
               {TIMELINE.map((item, index) => (
                 <div className="tl-node reveal" key={item.year} style={{ transitionDelay: `${index * 120}ms` }}>
                   <span className="tl-dot" />
                   <span className="tl-year">{item.year}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
+                  <h3>{t.history.timeline[index].title}</h3>
+                  <p>{t.history.timeline[index].desc}</p>
                 </div>
               ))}
             </div>
@@ -203,9 +215,9 @@ export default function App() {
         <section id="gallery" className="sec sec-dark">
           <div className="sec-container">
             <div className="reveal center-block">
-              <p className="eyebrow center">Field notes</p>
-              <h2 className="display light">The work is<br /><em>already underway.</em></h2>
-              <p className="body-text">Browse our archive of deposits, ore samples and project material from across Somaliland.</p>
+              <p className="eyebrow center">{t.gallery.eyebrow}</p>
+              <h2 className="display light">{t.gallery.h2a}<br /><em>{t.gallery.h2b}</em></h2>
+              <p className="body-text">{t.gallery.text}</p>
             </div>
           </div>
           <Gallery uploads={uploads} />
@@ -214,16 +226,16 @@ export default function App() {
         <section className="sec">
           <div className="sec-container">
             <div className="reveal center-block">
-              <p className="eyebrow center">Resource catalogue</p>
-              <h2 className="display">A pipeline of<br /><em>possibilities.</em></h2>
-              <p className="body-text">The resources below represent the breadth of Somaliland's mineral potential and the areas we are actively seeking to develop responsibly.</p>
+              <p className="eyebrow center">{t.catalogue.eyebrow}</p>
+              <h2 className="display">{t.catalogue.h2a}<br /><em>{t.catalogue.h2b}</em></h2>
+              <p className="body-text">{t.catalogue.text}</p>
             </div>
             <div className="mineral-grid reveal">
               {MINERALS.map((mineral, index) => (
                 <div className="mineral" key={mineral.name}>
                   <span className="mineral-num">{String(index + 1).padStart(2, '0')}</span>
                   <Gem size={18} />
-                  <div className="mineral-info"><strong>{mineral.name}</strong><small>{mineral.cat}</small></div>
+                  <div className="mineral-info"><strong>{t.catalogue.minerals[mineral.name] ?? mineral.name}</strong><small>{t.catalogue.cats[mineral.cat] ?? mineral.cat}</small></div>
                 </div>
               ))}
             </div>
@@ -232,20 +244,20 @@ export default function App() {
 
         <section id="contact" className="contact-sec">
           <div className="contact-visual">
-            <div className="contact-stamp">Come visit<strong>Somaliland</strong></div>
+            <div className="contact-stamp">{t.contact.stamp1}<strong>{t.contact.stamp2}</strong></div>
           </div>
           <div className="contact-panel">
             <div className="reveal">
-              <p className="eyebrow">Start a conversation</p>
-              <h2 className="display light">Bring the right<br /><em>people together.</em></h2>
-              <p className="body-text">We are looking for investors, deposit holders, technical partners, and operating specialists who see the opportunity in Somaliland and want to help shape it responsibly.</p>
+              <p className="eyebrow">{t.contact.eyebrow}</p>
+              <h2 className="display light">{t.contact.h2a}<br /><em>{t.contact.h2b}</em></h2>
+              <p className="body-text">{t.contact.text}</p>
               <div className="contact-info">
                 <a href={`mailto:${SITE.email}`}><Mail size={16} aria-hidden="true" /> {SITE.email}</a>
-                <span><MapPin size={16} aria-hidden="true" /> {SITE.address}</span>
+                <span><MapPin size={16} aria-hidden="true" /> {t.contact.address}</span>
                 {SITE.linkedin && <a href={SITE.linkedin} rel="noopener noreferrer" target="_blank"><Linkedin size={16} aria-hidden="true" /> LinkedIn</a>}
               </div>
               <ContactForm />
-              <p className="privacy-note">We use your details only to reply to your enquiry and do not share them. See our <a href="#privacy">privacy notice</a>.</p>
+              <p className="privacy-note">{t.contact.privacyBefore} <a href="#privacy">{t.contact.privacyLink}</a>.</p>
             </div>
           </div>
         </section>
@@ -255,35 +267,35 @@ export default function App() {
         <div className="footer-grid">
           <div>
             <div className="footer-brand"><Gem size={20} aria-hidden="true" /> Green Gemstone</div>
-            <p className="footer-tag">Responsible mining. Lasting value. A stronger Somaliland built from the ground up.</p>
+            <p className="footer-tag">{t.footer.tagline}</p>
           </div>
           <div className="footer-col">
-            <h3>Company</h3>
-            <a href="#company">About us</a>
-            <a href="#mission">Mission</a>
-            <a href="#projects">Projects</a>
+            <h3>{t.footer.company}</h3>
+            <a href="#company">{t.footer.about}</a>
+            <a href="#mission">{t.footer.mission}</a>
+            <a href="#projects">{t.footer.projects}</a>
           </div>
           <div className="footer-col">
-            <h3>Resources</h3>
-            <a href="#resources">Deposits</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#contact">Contact</a>
+            <h3>{t.footer.resources}</h3>
+            <a href="#resources">{t.footer.deposits}</a>
+            <a href="#gallery">{t.footer.gallery}</a>
+            <a href="#contact">{t.footer.contact}</a>
           </div>
           <div className="footer-col">
-            <h3>Connect</h3>
-            <a href={`mailto:${SITE.email}`}>Email</a>
+            <h3>{t.footer.connect}</h3>
+            <a href={`mailto:${SITE.email}`}>{t.footer.email}</a>
             {SITE.linkedin && <a href={SITE.linkedin} rel="noopener noreferrer" target="_blank">LinkedIn</a>}
-            <a href="#contact">Partner with us</a>
+            <a href="#contact">{t.footer.partner}</a>
           </div>
         </div>
         <div className="footer-base">
           <span>© {new Date().getFullYear()} {SITE.name}</span>
-          <span>Hargeisa · Somaliland</span>
-          {supabaseConfigured && <button type="button" className="owner-link" onClick={() => setMediaOpen(true)}>Owner login</button>}
+          <span>{t.footer.location}</span>
+          {supabaseConfigured && <button type="button" className="owner-link" onClick={() => setMediaOpen(true)}>{t.footer.ownerLogin}</button>}
         </div>
         <section id="privacy" className="privacy">
-          <h3>Privacy notice</h3>
-          <p>When you send an enquiry we store your name, email, company, interest and message so that {SITE.name} can respond. We do not sell or share this information, and we keep it only as long as needed to handle your enquiry. To see or delete your details, email <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
+          <h3>{t.footer.privacyTitle}</h3>
+          <p>{t.footer.privacyText} <a href={`mailto:${SITE.email}`}>{SITE.email}</a>.</p>
         </section>
       </footer>
     </div>
