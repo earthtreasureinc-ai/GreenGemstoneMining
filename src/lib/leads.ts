@@ -20,18 +20,23 @@ export interface LeadInput {
   website: string;
 }
 
-export type LeadErrors = Partial<Record<'name' | 'email' | 'message', string>>;
+/** Error codes; the UI translates them (see i18n `contact.form.errors`). */
+export interface LeadErrors {
+  name?: 'name';
+  email?: 'email';
+  message?: 'messageShort' | 'messageLong';
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export function validateLead(input: LeadInput): LeadErrors {
   const errors: LeadErrors = {};
-  if (input.name.trim().length < 2) errors.name = 'Please enter your name.';
+  if (input.name.trim().length < 2) errors.name = 'name';
   if (!EMAIL_RE.test(input.email.trim()) || input.email.length > 254) {
-    errors.email = 'Please enter a valid email address.';
+    errors.email = 'email';
   }
-  if (input.message.trim().length < 10) errors.message = 'Please tell us a little about what you need (10+ characters).';
-  if (input.message.length > 2000) errors.message = 'Please keep your message under 2000 characters.';
+  if (input.message.trim().length < 10) errors.message = 'messageShort';
+  if (input.message.length > 2000) errors.message = 'messageLong';
   return errors;
 }
 

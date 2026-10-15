@@ -79,7 +79,7 @@ export function Counter({ value, label, plus = true }: { value: number; label: s
 
   return (
     <div ref={ref} className="split-stats-card">
-      <strong>{shown}{plus ? '+' : ''}</strong>
+      <strong dir="ltr">{shown}{plus ? '+' : ''}</strong>
       <span>{label}</span>
     </div>
   );

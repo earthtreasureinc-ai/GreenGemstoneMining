@@ -15,15 +15,15 @@ describe('validateLead', () => {
     expect(validateLead(base)).toEqual({});
   });
   it('flags a bad email', () => {
-    expect(validateLead({ ...base, email: 'nope' }).email).toBeTruthy();
-    expect(validateLead({ ...base, email: 'a@b' }).email).toBeTruthy();
+    expect(validateLead({ ...base, email: 'nope' }).email).toBe('email');
+    expect(validateLead({ ...base, email: 'a@b' }).email).toBe('email');
   });
   it('flags short name and message', () => {
     const errors = validateLead({ ...base, name: 'A', message: 'hi' });
-    expect(errors.name).toBeTruthy();
-    expect(errors.message).toBeTruthy();
+    expect(errors.name).toBe('name');
+    expect(errors.message).toBe('messageShort');
   });
   it('flags an over-long message', () => {
-    expect(validateLead({ ...base, message: 'x'.repeat(2001) }).message).toBeTruthy();
+    expect(validateLead({ ...base, message: 'x'.repeat(2001) }).message).toBe('messageLong');
   });
 });

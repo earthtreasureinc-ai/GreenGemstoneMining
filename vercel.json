@@ -49,5 +49,15 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/:lang(so|ar|zh)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:lang(so|ar|zh)/",
+      "destination": "/index.html"
+    }
   ]
 }

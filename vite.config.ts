@@ -14,7 +14,7 @@ const siteFiles = (): Plugin => ({
     this.emitFile({
       type: 'asset',
       fileName: 'sitemap.xml',
-      source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE_URL}/</loc><lastmod>${new Date().toISOString().slice(0, 10)}</lastmod></url>\n</urlset>\n`,
+      source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n  ${['', 'zh/', 'so/', 'ar/'].map((p) => `  <url>\n    <loc>${SITE_URL}/${p}</loc>\n    <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>\n${[['en', ''], ['zh-Hans', 'zh/'], ['so', 'so/'], ['ar', 'ar/']].map(([l, q]) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE_URL}/${q}"/>`).join('\n')}\n  </url>`).join('\n')}\n</urlset>\n`,
     });
   },
 });
