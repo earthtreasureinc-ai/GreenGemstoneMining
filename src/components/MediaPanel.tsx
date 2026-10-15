@@ -1,13 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase, MediaUpload, MediaCategory } from '@/lib/supabase';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { MEDIA_BUCKET, type MediaUpload, type MediaCategory } from '@/lib/supabase';
+import { MAX_FILE_SIZE, formatBytes, isAllowedMime, isVideoName, normalizeFolderSlug } from '@/lib/media';
 import {
   X, Upload, Trash2, Image as ImageIcon, Video, Loader2, Check, Gem, Folder, Plus,
 } from 'lucide-react';
+
+interface AdminSession {
+  client: SupabaseClient | null;
+  email: string | null;
+  isAdmin: boolean;
+  checking: boolean;
+  signIn: (email: string, password: string) => Promise<string | null>;
+  signOut: () => Promise<void>;
+}
 
 interface MediaPanelProps {
   open: boolean;
   onClose: () => void;
   onUploaded: () => void;
+  admin: AdminSession;
 }
 
 interface UploadProgressItem {
@@ -17,20 +29,6 @@ interface UploadProgressItem {
   progress: number;
   message: string;
 }
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_FILE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/svg+xml',
-  'video/mp4',
-  'video/quicktime',
-  'video/webm',
-  'video/x-msvideo',
-  'video/ogg',
-];
 
 const CATEGORIES: { value: MediaCategory; label: string }[] = [
   { value: 'hero', label: 'Hero / Banner' },
@@ -42,42 +40,8 @@ const CATEGORIES: { value: MediaCategory; label: string }[] = [
   { value: 'general', label: 'General' },
 ];
 
-const videoExtensions = ['mp4', 'mov', 'avi', 'webm', 'mkv', 'm4v', 'ogg', 'ogv', 'wmv', 'flv'];
-
-const formatBytes = (bytes: number) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let value = bytes;
-  let unitIndex = 0;
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024;
-    unitIndex += 1;
-  }
-  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-};
-
-const isVideoFile = (file: File) => {
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  return file.type.startsWith('video/') || videoExtensions.includes(ext);
-};
-
-const isAllowedFileType = (file: File) => {
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-  if (file.type.startsWith('image/') || file.type.startsWith('video/')) return true;
-  return ALLOWED_FILE_TYPES.includes(file.type) || videoExtensions.includes(ext);
-};
-
-const normalizeFolderSlug = (value: string) => {
-  const cleaned = value
-    .trim()
-    .replace(/\\/+/g, '/')
-    .replace(/^\.+/, '')
-    .replace(/[^a-zA-Z0-9._/-]/g, '-')
-    .replace(/\/+/, '/')
-    .replace(/\/\/{2,}/g, '/');
-
-  return cleaned.split('/').filter(Boolean).join('/').slice(0, 64) || '';
-};
+const isVideoFile = (file: File) => isVideoName(file.name, file.type);
+const isAllowedFileType = (file: File) => isAllowedMime(file.type);
 
 const humanizeStorageError = (error: { message: string } | null, fallback: string) => {
   if (!error) return fallback;
@@ -115,7 +79,8 @@ const deriveFolders = (rows: MediaUpload[], category: MediaCategory) => {
   return Array.from(map.values()).sort((a, b) => a.path.localeCompare(b.path));
 };
 
-export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProps) {
+function MediaManager({ open, onClose, onUploaded, admin }: MediaPanelProps) {
+  const sb = admin.client as SupabaseClient;
   const [allMedia, setAllMedia] = useState<MediaUpload[]>([]);
   const [folders, setFolders] = useState<{ path: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -133,7 +98,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('media_uploads')
       .select('*')
       .order('created_at', { ascending: false });
@@ -148,7 +113,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     const rows = (data ?? []) as MediaUpload[];
     setAllMedia(rows);
     setFolders(deriveFolders(rows, uploadCategory));
-  }, [uploadCategory]);
+  }, [sb, uploadCategory]);
 
   useEffect(() => {
     if (!open) return;
@@ -222,8 +187,8 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     setUploading(true);
     setStatus({ type: 'info', msg: `Creating folder "${cleaned}"…` });
 
-    const { error } = await supabase.storage
-      .from('media')
+    const { error } = await sb.storage
+      .from(MEDIA_BUCKET)
       .upload(folderPath, new Blob(['folder marker'], { type: 'text/plain' }), {
         cacheControl: '3600',
         upsert: true,
@@ -274,16 +239,16 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
     ]);
 
     for (const file of nextFiles) {
-      const itemId = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}-${file.name}`;
-      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''}`;
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase().replace(/[^a-z0-9.]/g, '') : '';
+      const safeName = `${crypto.randomUUID()}${ext}`;
       const folderPrefix = selectedFolder ? `${selectedFolder}/` : '';
       const filePath = `${uploadCategory}/${folderPrefix}${safeName}`;
 
       setUploadQueue((prev) => prev.map((entry) => (entry.id.includes(file.name) ? { ...entry, progress: 35, message: 'Uploading to storage' } : entry)));
       setStatus({ type: 'info', msg: `Uploading ${file.name}…` });
 
-      const { error: uploadError } = await supabase.storage
-        .from('media')
+      const { error: uploadError } = await sb.storage
+        .from(MEDIA_BUCKET)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
@@ -297,9 +262,9 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
 
       setUploadQueue((prev) => prev.map((entry) => (entry.name === file.name ? { ...entry, progress: 70, message: 'Writing media record' } : entry)));
 
-      const { data: urlData } = supabase.storage.from('media').getPublicUrl(filePath);
+      const { data: urlData } = sb.storage.from(MEDIA_BUCKET).getPublicUrl(filePath);
 
-      const { error: insertError } = await supabase.from('media_uploads').insert({
+      const { error: insertError } = await sb.from('media_uploads').insert({
         title: uploadTitle || file.name.replace(/\.[^/.]+$/, ''),
         description: uploadDesc || null,
         media_type: isVideoFile(file) ? 'video' : 'image',
@@ -329,13 +294,13 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   };
 
   const handleDelete = async (item: MediaUpload) => {
-    const { error } = await supabase.storage.from('media').remove([item.storage_path]);
+    const { error } = await sb.storage.from(MEDIA_BUCKET).remove([item.storage_path]);
     if (error) {
       setStatus({ type: 'error', msg: `Delete failed: ${error.message}` });
       return;
     }
 
-    const { error: dbError } = await supabase.from('media_uploads').delete().eq('id', item.id);
+    const { error: dbError } = await sb.from('media_uploads').delete().eq('id', item.id);
     if (dbError) {
       setStatus({ type: 'error', msg: `Database cleanup failed: ${dbError.message}` });
       return;
@@ -347,7 +312,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
   };
 
   const handleToggleActive = async (item: MediaUpload) => {
-    const { error } = await supabase.from('media_uploads').update({ is_active: !item.is_active }).eq('id', item.id);
+    const { error } = await sb.from('media_uploads').update({ is_active: !item.is_active }).eq('id', item.id);
 
     if (error) {
       setStatus({ type: 'error', msg: `Visibility update failed: ${error.message}` });
@@ -376,10 +341,11 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
               Manage Media
             </h2>
             <p className="media-modal-sub">
-              Upload your own photos and videos. They appear in the gallery alongside the Canva design pages.
+              Signed in as {admin.email}. Uploads appear in the public gallery under &quot;My uploads&quot;.
             </p>
           </div>
-          <button onClick={onClose} className="media-close" aria-label="Close media panel">
+          <button type="button" onClick={() => void admin.signOut().then(onClose)} className="media-close media-signout">Sign out</button>
+          <button type="button" onClick={onClose} className="media-close" aria-label="Close media panel">
             <X size={22} />
           </button>
         </div>
@@ -394,31 +360,31 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
           <div className="media-upload-section">
             <div className="media-upload-fields">
               <div>
-                <label className="media-label">Title (optional)</label>
+                <label className="media-label" htmlFor="mm-title">Title (optional)</label>
                 <input
                   type="text"
                   value={uploadTitle}
                   onChange={(e) => setUploadTitle(e.target.value)}
                   placeholder="e.g. Emerald excavation site"
+                  id="mm-title"
                   className="media-input"
-                  aria-label="Optional title for the media upload"
                 />
               </div>
 
               <div>
-                <label className="media-label">Description (optional)</label>
+                <label className="media-label" htmlFor="mm-desc">Description (optional)</label>
                 <input
                   type="text"
                   value={uploadDesc}
                   onChange={(e) => setUploadDesc(e.target.value)}
                   placeholder="e.g. Field work in Sanaag region"
+                  id="mm-desc"
                   className="media-input"
-                  aria-label="Optional description for the media upload"
                 />
               </div>
 
               <div>
-                <label className="media-label">Where should it appear?</label>
+                <label className="media-label" htmlFor="mm-cat">Where should it appear?</label>
                 <select
                   value={uploadCategory}
                   onChange={(e) => {
@@ -426,8 +392,8 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                     setUploadCategory(next);
                     setSelectedFolder('');
                   }}
+                  id="mm-cat"
                   className="media-input media-select"
-                  aria-label="Select media category"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>
@@ -520,7 +486,7 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
                   <p>
                     Drag &amp; drop or <span>click to browse</span>
                   </p>
-                  <p className="media-dropzone-hint">Supports photos and videos up to 10MB each</p>
+                  <p className="media-dropzone-hint">Photos (JPG, PNG, WebP, GIF) and videos (MP4, WebM, MOV) up to 10 MB each</p>
                 </div>
               )}
               <input
@@ -626,4 +592,60 @@ export default function MediaPanel({ open, onClose, onUploaded }: MediaPanelProp
       </div>
     </div>
   );
+}
+
+function OwnerLogin({ onClose, admin }: Pick<MediaPanelProps, 'onClose' | 'admin'>) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    ref.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(await admin.signIn(email, password));
+    setBusy(false);
+  };
+
+  const signedInNotAdmin = admin.email && !admin.isAdmin && !admin.checking;
+
+  return (
+    <div className="media-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="media-modal media-login" ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Owner login">
+        <div className="media-modal-header">
+          <h2><Gem size={20} /> Owner login</h2>
+          <button type="button" onClick={onClose} className="media-close" aria-label="Close"><X size={22} /></button>
+        </div>
+        {signedInNotAdmin ? (
+          <div className="media-modal-body">
+            <p className="media-status media-status-error" role="alert">{admin.email} is not an authorised media manager.</p>
+            <button type="button" className="media-primary-btn" onClick={() => void admin.signOut()}>Sign out</button>
+          </div>
+        ) : (
+          <form className="media-modal-body" onSubmit={submit}>
+            <label className="media-label" htmlFor="ol-email">Email</label>
+            <input id="ol-email" type="email" autoComplete="username" className="media-input" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label className="media-label" htmlFor="ol-pass">Password</label>
+            <input id="ol-pass" type="password" autoComplete="current-password" className="media-input" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            {error && <p className="media-status media-status-error" role="alert">{error}</p>}
+            <button className="media-primary-btn" type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function MediaPanel(props: MediaPanelProps) {
+  if (!props.open) return null;
+  if (!props.admin.client || !props.admin.isAdmin) return <OwnerLogin onClose={props.onClose} admin={props.admin} />;
+  return <MediaManager {...props} />;
 }

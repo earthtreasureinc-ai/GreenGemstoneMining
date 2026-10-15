@@ -1,22 +1,37 @@
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-const { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } = import.meta.env;
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!VITE_SUPABASE_URL || !VITE_SUPABASE_ANON_KEY) {
-  console.warn('Supabase env vars are missing. Media uploads and gallery sync will fail until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
+/** True when both public Supabase settings are present at build time. */
+export const supabaseConfigured = Boolean(url && anonKey);
+
+let clientPromise: Promise<SupabaseClient | null> | null = null;
+
+/**
+ * Browser client using the public anon key only, loaded on demand so the Supabase
+ * SDK stays off the critical path. Resolves to `null` when env vars are missing, so
+ * the static site still renders (uploads and the enquiry form degrade gracefully).
+ */
+export function getSupabase(): Promise<SupabaseClient | null> {
+  if (!supabaseConfigured) return Promise.resolve(null);
+  clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) => createClient(url as string, anonKey as string));
+  return clientPromise;
 }
 
-export const supabase = createClient(VITE_SUPABASE_URL || '', VITE_SUPABASE_ANON_KEY || '');
+export const MEDIA_BUCKET = 'media';
 
-export type MediaCategory =
-  | 'hero'
-  | 'company'
-  | 'deposits'
-  | 'projects'
-  | 'gallery'
-  | 'contact'
-  | 'general';
+export const MEDIA_CATEGORIES = [
+  'hero',
+  'company',
+  'deposits',
+  'projects',
+  'gallery',
+  'contact',
+  'general',
+] as const;
 
+export type MediaCategory = (typeof MEDIA_CATEGORIES)[number];
 export type MediaType = 'image' | 'video';
 
 export interface MediaUpload {
