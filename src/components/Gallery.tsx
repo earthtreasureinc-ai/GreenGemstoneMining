@@ -1,113 +1,92 @@
-import { useState } from 'react';
-import { useReveal } from '@/hooks/useReveal';
-import { useMedia } from '@/hooks/useMedia';
-import { PLACEHOLDER } from '@/data/content';
-import { X, Play } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Video, X } from 'lucide-react';
+import { GALLERY, GALLERY_GROUPS } from '@/data/site';
+import { getUploadFolderName, matchesGalleryFilter, type GalleryFilter, type GalleryItem } from '@/lib/media';
+import type { MediaUpload } from '@/lib/supabase';
 
-interface GalleryItem {
-  id: string;
-  url: string;
-  type: 'image' | 'video';
-  title: string;
-}
+const WIDTHS = ['w5', 'w6', 'w7'];
+const FILTERS: GalleryFilter[] = ['All', ...GALLERY_GROUPS];
 
-export default function Gallery() {
-  const { ref, visible } = useReveal();
-  const { media } = useMedia('gallery');
-  const [lightbox, setLightbox] = useState<GalleryItem | null>(null);
+export default function Gallery({ uploads }: { uploads: MediaUpload[] }) {
+  const [filter, setFilter] = useState<GalleryFilter>('All');
+  const [folder, setFolder] = useState('All folders');
+  const [open, setOpen] = useState<GalleryItem | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
 
-  const items: GalleryItem[] =
-    media.length > 0
-      ? media.map((m) => ({
-          id: m.id,
-          url: m.public_url,
-          type: m.media_type,
-          title: m.title,
-        }))
-      : [
-          { id: 'g1', url: PLACEHOLDER.gallery1, type: 'image', title: 'Raw Emerald' },
-          { id: 'g2', url: PLACEHOLDER.gallery2, type: 'image', title: 'Emerald Crystal' },
-          { id: 'g3', url: PLACEHOLDER.gallery3, type: 'image', title: 'Green Beryl' },
-          { id: 'g4', url: PLACEHOLDER.gallery4, type: 'image', title: 'Rough Emerald' },
-          { id: 'g5', url: PLACEHOLDER.gallery5, type: 'image', title: 'Emerald on Dark' },
-          { id: 'g6', url: PLACEHOLDER.gallery6, type: 'image', title: 'Healing Crystals' },
-        ];
+  const uploadItems: GalleryItem[] = useMemo(
+    () => uploads.map((u) => ({
+      src: u.public_url, label: u.title, group: 'My uploads' as const, type: u.media_type,
+      width: 1200, height: 800, folder: getUploadFolderName(u.storage_path),
+    })),
+    [uploads],
+  );
+  const folders = useMemo(() => ['All folders', ...Array.from(new Set(uploadItems.map((i) => i.folder ?? 'General'))).sort()], [uploadItems]);
+  const filters = uploadItems.length ? FILTERS : FILTERS.filter((f) => f !== 'My uploads');
+
+  const visible = useMemo(() => {
+    const all = [...GALLERY, ...uploadItems].filter((i) => matchesGalleryFilter(i, filter));
+    return filter === 'My uploads' && folder !== 'All folders' ? all.filter((i) => i.folder === folder) : all;
+  }, [filter, folder, uploadItems]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    returnFocus.current = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(null);
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        closeRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      returnFocus.current?.focus();
+    };
+  }, [open]);
 
   return (
-    <section id="gallery" className="py-24 md:py-32 px-6 bg-charcoal-900 relative">
-      <div ref={ref} className={`max-w-7xl mx-auto ${visible ? 'reveal visible' : 'reveal'}`}>
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="ornament-line" />
-            <span className="section-label">The Gallery</span>
-            <span className="ornament-line" />
-          </div>
-          <h2 className="text-4xl md:text-5xl font-serif font-light text-champagne-50">
-            Nature's Green Masterpieces
-          </h2>
-          <p className="mt-4 text-champagne-100/60 font-light max-w-xl mx-auto">
-            A close look at the raw beauty of the gemstones that become our jewelry —
-            and the pieces themselves, captured in exquisite detail.
-          </p>
+    <>
+      <div className="gallery-filters" role="group" aria-label="Filter gallery">
+        {filters.map((f) => (
+          <button key={f} type="button" className={filter === f ? 'active' : ''} aria-pressed={filter === f} onClick={() => { setFilter(f); setFolder('All folders'); }}>{f}</button>
+        ))}
+      </div>
+      {filter === 'My uploads' && folders.length > 2 && (
+        <div className="gallery-filters" role="group" aria-label="Filter uploads by folder">
+          {folders.map((f) => (
+            <button key={f} type="button" className={folder === f ? 'active' : ''} aria-pressed={folder === f} onClick={() => setFolder(f)}>{f}</button>
+          ))}
         </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
-          {items.map((item, idx) => {
-            const isLarge = idx === 0 || (idx === 5 && items.length > 6);
-            return (
-              <div
-                key={item.id}
-                className={`relative overflow-hidden rounded-lg group cursor-pointer ${
-                  isLarge ? 'col-span-2 row-span-2' : ''
-                }`}
-                onClick={() => setLightbox(item)}
-              >
-                {item.type === 'video' ? (
-                  <video
-                    src={item.url}
-                    muted
-                    loop
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <img
-                    src={item.url}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                )}
-                <div className="absolute inset-0 bg-charcoal-950/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  {item.type === 'video' ? (
-                    <Play className="w-10 h-10 text-champagne-50 fill-champagne-50" />
-                  ) : (
-                    <span className="text-champagne-50 text-sm font-light tracking-wide">{item.title}</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+      )}
+      <div className="gallery-h reveal in">
+        <div className="gallery-track">
+          {visible.map((item, i) => (
+            <button key={`${item.src}-${i}`} type="button" className={`g-item ${WIDTHS[i % 3]}`} onClick={() => setOpen(item)} aria-label={`Open ${item.label}`}>
+              {item.type === 'video' ? (
+                <video src={item.src} muted preload="metadata" className="g-video" />
+              ) : (
+                <img src={item.src} alt={item.label} width={item.width} height={item.height} loading="lazy" decoding="async" />
+              )}
+              {item.type === 'video' && <span className="g-video-icon"><Video size={16} /></span>}
+              {item.folder && <span className="g-folder-tag">{item.folder}</span>}
+              <span className="g-label">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
-
-      {/* Lightbox */}
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-charcoal-950/90 backdrop-blur-sm animate-fade-in"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            onClick={() => setLightbox(null)}
-            className="absolute top-6 right-6 text-champagne-100/60 hover:text-champagne-50 transition-colors"
-          >
-            <X className="w-8 h-8" />
-          </button>
-          {lightbox.type === 'video' ? (
-            <video src={lightbox.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-lg" />
+      {open && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={open.label} onClick={() => setOpen(null)}>
+          <button ref={closeRef} type="button" onClick={() => setOpen(null)} aria-label="Close"><X /></button>
+          {open.type === 'video' ? (
+            <video src={open.src} controls autoPlay className="lightbox-video" onClick={(e) => e.stopPropagation()} />
           ) : (
-            <img src={lightbox.url} alt={lightbox.title} className="max-w-full max-h-[85vh] rounded-lg" />
+            <img src={open.src} alt={open.label} onClick={(e) => e.stopPropagation()} />
           )}
         </div>
       )}
-    </section>
+    </>
   );
 }

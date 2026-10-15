@@ -1,0 +1,12 @@
+{
+  "name": "Green Gemstone Mining Company",
+  "short_name": "Green Gemstone",
+  "description": "Responsible gemstone, rare earth and industrial metal development in Somaliland.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#070a08",
+  "theme_color": "#0c2018",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
