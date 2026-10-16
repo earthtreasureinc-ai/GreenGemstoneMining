@@ -5,6 +5,7 @@ import SomalilandMap from '@/components/SomalilandMap';
 import { REGIONS } from '@/data/site';
 import { MAP_REGIONS } from '@/data/mapData';
 import { OCCURRENCES } from '@/data/geology';
+import { project } from '@/data/geoProject';
 import en from '@/i18n/en';
 import so from '@/i18n/so';
 import ar from '@/i18n/ar';
@@ -48,11 +49,29 @@ describe('SomalilandMap', () => {
     }
   });
 
+  it('places every marker inside the polygon of the region it belongs to', () => {
+    const rings = (d: string) => d.split('M').slice(1).map((sub) => sub.split('L').map((q) => q.replace('Z', '').trim().split(' ').map(Number) as [number, number]));
+    const inside = (pt: [number, number], ring: [number, number][]) => {
+      let c = false;
+      for (let i = 0; i < ring.length; i++) {
+        const [x1, y1] = ring[i];
+        const [x2, y2] = ring[(i + 1) % ring.length];
+        if (y1 > pt[1] !== y2 > pt[1] && pt[0] < ((x2 - x1) * (pt[1] - y1)) / (y2 - y1) + x1) c = !c;
+      }
+      return c;
+    };
+    for (const o of OCCURRENCES) {
+      const key = REGIONS.find((r) => r.id === o.region)!.key;
+      const pt = project(o.lon, o.lat);
+      expect(rings(MAP_REGIONS[key].d).some((ring) => inside(pt, ring)), `${o.id} should be inside ${key}`).toBe(true);
+    }
+  });
+
   it('shows the recorded occurrences of the selected region and lets a marker select its region', () => {
     render(<SomalilandMap />);
     fireEvent.click(document.querySelector('g[aria-label^="Dalan and Assilih tin"]') as SVGGElement);
     expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Sanaag');
-    expect(screen.getAllByText(/Cassiterite in quartz/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cassiterite and tin-tantalum/).length).toBeGreaterThan(0);
   });
 
   it('switches between the regions and geology layers', () => {
