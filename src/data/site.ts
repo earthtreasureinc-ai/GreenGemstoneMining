@@ -31,14 +31,14 @@ export const MINERALS = [
   { name: 'Uranium', cat: 'Metal' },
 ];
 
-/** Schematic only: positions are illustrative, not geographic boundaries. */
-export const REGIONS = [
-  { name: 'Awdal', x: 80, y: 120, w: 140, h: 90 },
-  { name: 'Maroodi Jeex', x: 230, y: 140, w: 110, h: 70 },
-  { name: 'Saaxil', x: 200, y: 220, w: 140, h: 80 },
-  { name: 'Togdheer', x: 340, y: 100, w: 130, h: 90 },
-  { name: 'Sanaag', x: 480, y: 90, w: 160, h: 110 },
-  { name: 'Sool', x: 440, y: 210, w: 140, h: 80 },
+/** Regions on the map. `key` indexes MAP_REGIONS; the id indexes the translated text. dx/dy nudge the name label. */
+export const REGIONS: { id: string; key: string; dx?: number; dy?: number }[] = [
+  { id: 'awdal', key: 'Awdal' },
+  { id: 'maroodiJeex', key: 'Maroodi Jeex', dx: -18, dy: -34 },
+  { id: 'sahil', key: 'Sahil', dx: -95, dy: 34 },
+  { id: 'togdheer', key: 'Togdheer', dx: 22 },
+  { id: 'sanaag', key: 'Sanaag' },
+  { id: 'sool', key: 'Sool' },
 ];
 
 /** Years only; titles and descriptions live in src/i18n/*.ts (same order). */
