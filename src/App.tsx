@@ -5,7 +5,7 @@ import ContactForm from '@/components/ContactForm';
 import SomalilandMap from '@/components/SomalilandMap';
 import { Counter, Crystal3D, ScrollProgress } from '@/components/Effects';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { DEPOSITS, IMAGES, MINERALS, REGIONS, SITE, TIMELINE } from '@/data/site';
+import { DEPOSITS, IMAGES, MINERALS, SITE, TIMELINE } from '@/data/site';
 import { useI18n } from '@/i18n/core';
 import { useAdminSession } from '@/hooks/useAdminSession';
 import { useReveals } from '@/hooks/useReveals';
@@ -178,18 +178,7 @@ export default function App() {
               <h2 className="display light">{t.projects.h2a}<br /><em>{t.projects.h2b}</em></h2>
               <p className="body-text">{t.projects.text}</p>
             </div>
-            <div className="map-section">
-              <div className="reveal"><SomalilandMap /></div>
-              <div className="map-legend reveal" style={{ transitionDelay: '150ms' }}>
-                {REGIONS.map((region, index) => (
-                  <a key={region.name} href="#contact" className="map-legend-item" style={{ transitionDelay: `${index * 60}ms` }}>
-                    <span className="dot" />
-                    <div><strong>{region.name}</strong><small>{t.projects.legend}</small></div>
-                    <ArrowUpRight size={18} className="go" />
-                  </a>
-                ))}
-              </div>
-            </div>
+            <div className="reveal"><SomalilandMap /></div>
           </div>
         </section>
 
