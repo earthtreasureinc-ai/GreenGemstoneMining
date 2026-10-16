@@ -99,7 +99,7 @@ const zh: Dict = {
     groups: { gems: '宝石', metals: '金属', industrial: '工业矿物', energy: '能源' } as Record<string, string>,
     kinds: { gem: '宝石', metal: '金属', industrial: '工业', energy: '能源' } as Record<string, string>,
     nationalLabel: '索马里兰另有报道，但未注明具体位置',
-    national: '红宝石、紫水晶、电气石、黄玉、尖晶石、锆石、硬玉、锰、铁、云母、长石、大理石、石英砂、石棉',
+    national: '红宝石、紫水晶、电气石、黄玉、尖晶石、锆石、硬玉、锰、铁、云母、长石、大理石、石英砂、石棉、褐帘石、铌钇矿。锂：据报道2024年已授予勘探权，官员也称有锂潜力，但独立调查有限，因此尚未证实',
     sourcesLabel: '资料来源',
     cta: '咨询该地区',
     coords: '指针',
@@ -124,19 +124,22 @@ const zh: Dict = {
       laasaSurad: { name: '拉萨-苏拉德区', text: '政府划定的区块，面积约288平方公里，目标为基底岩石中的黄金和贱金属。' },
       dalan: { name: '达兰和阿西利锡矿', text: '石英和伟晶岩脉及河流砾石中的锡石，附近有铅、铜和重晶石矿脉。' },
       nugaal: { name: '努加尔盆地', text: '东部沉积盆地，属于油气勘探区块的一部分。' },
+      darkainle: { name: '达尔凯恩利杂岩体', text: '博拉马东北的碱性杂岩体，含霞石正长岩和碳酸岩侵入体：磷灰石、铌（烧绿石）和钼。' },
+      lafaruug: { name: '达尔布鲁克-拉法鲁格伟晶岩带', text: '柏培拉至哈尔格萨公路沿线的伟晶岩，含祖母绿、海蓝宝石、绿柱石、云母、铌铁矿和压电石英，附近还有钙铝榴石。' },
+      zeilaSalt: { name: '泽拉盐', text: '阿瓦达尔海岸历史港口泽拉周边传统开采的岩盐。' },
     } as Record<string, { name: string; text: string }>,
     regions: {
       awdal: {
         name: 'Awdal',
         role: '西北门户，与吉布提和埃塞俄比亚接壤，以博拉马为中心，沿海有历史港口泽拉。',
         geology: '沿海平原向上延伸至高地基底岩石，云母片岩中赋存含祖母绿的伟晶岩。',
-        minerals: { gems: ['祖母绿', '绿柱石', '石榴石'], metals: ['黄金', '铜', '铅', '铌钽铁矿', '锌', '镍'], industrial: ['金云母'], energy: [] },
+        minerals: { gems: ['祖母绿', '绿柱石', '石榴石'], metals: ['黄金', '铜', '铅', '铌钽铁矿', '锌', '镍'], industrial: ['金云母', '岩盐'], energy: [] },
       },
       maroodiJeex: {
         name: 'Maroodi Jeex',
         role: '首都和商业中心哈尔格萨所在地，拥有机场和通往柏培拉港的主干公路，包括加比莱地区。',
         geology: '结晶基底和北部陡崖，有前寒武纪花岗岩和超基性岩体，靠近道路、电力和各项服务。',
-        minerals: { gems: ['蓝宝石', '石榴石', '祖母绿'], metals: ['黄金', '铜', '铅', '锌', '钼', '镍', '铬', '铁'], industrial: [], energy: [] },
+        minerals: { gems: ['蓝宝石', '石榴石', '祖母绿'], metals: ['黄金', '铜', '铅', '锌', '钼', '镍', '铬', '铁', '铌（烧绿石）', '铋', '铂族金属（异常）'], industrial: ['磷灰石', '高岭土'], energy: [] },
       },
       sahil: {
         name: 'Sahil',
@@ -144,8 +147,8 @@ const zh: Dict = {
         geology: '新近沉积的低平沿海平原，内陆为陡崖，包括古班盆地和谢赫周围的辉长岩丘陵。',
         minerals: {
           gems: ['祖母绿', '绿柱石'],
-          metals: ['黄金', '铜', '铅', '铌钽铁矿', '磁铁矿', '钛铁矿和金红石', '锆石', '独居石'],
-          industrial: ['石膏', '硬石膏', '石灰岩', '重晶石', '萤石'],
+          metals: ['黄金', '铜', '铅', '铌钽铁矿', '磁铁矿', '钛铁矿和金红石', '锆石', '独居石', '钽（钽铝石）'],
+          industrial: ['石膏', '硬石膏', '石灰岩', '重晶石', '萤石', '压电石英', '云母'],
           energy: ['褐煤', '油气盆地'],
         },
       },
@@ -159,7 +162,7 @@ const zh: Dict = {
         name: 'Sanaag',
         role: '东北部山区，以埃里加沃为中心，有高耸的卡尔马多山脉和绵长的亚丁湾海岸线。',
         geology: '西部为山地基底，东部为宽阔的中生代沉积带。',
-        minerals: { gems: [], metals: ['黄金', '锡', '铜', '铅', '磁铁矿'], industrial: ['重晶石', '石灰岩'], energy: ['少量褐煤'] },
+        minerals: { gems: [], metals: ['黄金', '锡', '铜', '铅', '磁铁矿', '钽铁矿'], industrial: ['重晶石', '石灰岩', '云母', '鸟粪'], energy: ['少量褐煤'] },
       },
       sool: {
         name: 'Sool',

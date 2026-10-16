@@ -99,7 +99,7 @@ const so: Dict = {
     groups: { gems: 'Dhagaxyada qiimaha leh', metals: 'Biraha', industrial: 'Macdanta warshadaha', energy: 'Tamarta' } as Record<string, string>,
     kinds: { gem: 'Dhagax qiimo leh', metal: 'Bir', industrial: 'Warshadeed', energy: 'Tamar' } as Record<string, string>,
     nationalLabel: 'Sidoo kale waa la sheegay Soomaaliland, goobtu lama cayimin',
-    national: 'Ruby, amethyst, tourmaline, topaz, spinel, zircon, jadeite, manganese, bir, mica, feldspar, marmar, ciid quartz ah, asbestos',
+    national: 'Ruby, amethyst, tourmaline, topaz, spinel, zircon, jadeite, manganese, bir, mica, feldspar, marmar, ciid quartz ah, asbestos, allanite, samarskite. Lithium: xuquuq baaritaan ayaa lagu sheegay 2024, ra’iisul wasaaraduna waxay sheegaan suurtagalnimo lithium ah, laakiin sahanno madax-bannaan way yar yihiin, sidaas darteed lama xaqiijin',
     sourcesLabel: 'Ilaha',
     cta: 'Wax ka weydiiso gobolkan',
     coords: 'Tilmaame',
@@ -124,19 +124,22 @@ const so: Dict = {
       laasaSurad: { name: 'Aagga Laasa-Surad', text: 'Qayb dowladeed oo qiyaastii 288 km laba jibaaran ah oo loogu talagalay dahab iyo biraha aasaasiga ah ee dhagaxa aasaasiga ah.' },
       dalan: { name: 'Tin-ka Dalan iyo Asiliih', text: 'Cassiterite oo ku jira xididdo quartz iyo pegmatite ah iyo dhagaxyo durdur, oo agtooda ka jira xididdo lead, copper iyo barite.' },
       nugaal: { name: 'Togga Nugaal', text: 'Tog dhagax dhigan oo bariga ah, oo ka mid ah goobaha baaritaanka saliidda iyo gaaska.' },
+      darkainle: { name: 'Deegaanka Darkainle', text: 'Dhismo alkaline ah oo leh nepheline syenite iyo carbonatite waqooyi-bari Boorama: apatite, niobium (pyrochlore) iyo molybdenum.' },
+      lafaruug: { name: 'Suxulka pegmatite Daarburuq-Lafaruug', text: 'Pegmatite ku teedsan wadada Berbera-Hargeysa oo leh zumurud, aquamarine, beryl, mica, columbite iyo quartz korontada-dhaliya, garnet hessonite-na agtiisa.' },
+      zeilaSalt: { name: 'Milixda Saylac', text: 'Milix dhagaxeed oo dhaqan ahaan loo qodo xeebta Awdal agagaarka dekeddii hore ee Saylac.' },
     } as Record<string, { name: string; text: string }>,
     regions: {
       awdal: {
         name: 'Awdal',
         role: 'Iridda waqooyi-galbeed, oo xuduud la leh Jabuuti iyo Itoobiya, Boorama ayaa xarunteeda ah, Saylac-na waa dekeddii hore ee xeebta.',
         geology: 'Bannaan xeebeed oo kor u kacaya dhagaxa aasaasiga ah ee buuralayda, schist mica ah oo hooyay pegmatite zumurud leh.',
-        minerals: { gems: ['Zumurud', 'Beryl', 'Garnet'], metals: ['Dahab', 'Copper', 'Lead', 'Columbite-tantalite', 'Zinc', 'Nickel'], industrial: ['Phlogopite mica'], energy: [] },
+        minerals: { gems: ['Zumurud', 'Beryl', 'Garnet'], metals: ['Dahab', 'Copper', 'Lead', 'Columbite-tantalite', 'Zinc', 'Nickel'], industrial: ['Phlogopite mica', 'Milix dhagaxeed'], energy: [] },
       },
       maroodiJeex: {
         name: 'Maroodi Jeex',
         role: 'Waxay hoy u tahay Hargeysa, caasimadda iyo xarunta ganacsiga, oo leh garoonka diyaaradaha iyo wadada weyn ee Berbera. Waxay ka mid tahay deegaanka Gabiley.',
         geology: 'Dhagax aasaasi ah iyo jebinta waqooyi, oo leh granite Precambrian ah iyo jirka ultramafic, oo u dhow waddooyin, korontada iyo adeegyada.',
-        minerals: { gems: ['Sapphire', 'Garnet', 'Zumurud'], metals: ['Dahab', 'Copper', 'Lead', 'Zinc', 'Molybdenum', 'Nickel', 'Chromium', 'Bir'], industrial: [], energy: [] },
+        minerals: { gems: ['Sapphire', 'Garnet', 'Zumurud'], metals: ['Dahab', 'Copper', 'Lead', 'Zinc', 'Molybdenum', 'Nickel', 'Chromium', 'Bir', 'Niobium (pyrochlore)', 'Bismuth', 'Biraha platinum-ka (calaamado)'], industrial: ['Apatite', 'Kaolin'], energy: [] },
       },
       sahil: {
         name: 'Saaxil',
@@ -144,8 +147,8 @@ const so: Dict = {
         geology: 'Bannaan xeebeed oo hoose oo dhoobo cusub ah, jebin-na gudaha ah, togga Guban iyo buuraha gabbro ee Sheekh agtooda.',
         minerals: {
           gems: ['Zumurud', 'Beryl'],
-          metals: ['Dahab', 'Copper', 'Lead', 'Columbite-tantalite', 'Magnetite', 'Ilmenite iyo rutile', 'Zircon', 'Monazite'],
-          industrial: ['Jibsiin', 'Anhydrite', 'Dhagaxa kalluunka', 'Barite', 'Fluorite'],
+          metals: ['Dahab', 'Copper', 'Lead', 'Columbite-tantalite', 'Magnetite', 'Ilmenite iyo rutile', 'Zircon', 'Monazite', 'Tantalum (simpsonite)'],
+          industrial: ['Jibsiin', 'Anhydrite', 'Dhagaxa kalluunka', 'Barite', 'Fluorite', 'Quartz korontada-dhaliya', 'Mica'],
           energy: ['Dhuxul lignite', 'Tog saliid iyo gaas'],
         },
       },
@@ -159,7 +162,7 @@ const so: Dict = {
         name: 'Sanaag',
         role: 'Gobolka buuraleyda waqooyi-bari ee ku xeeran Ceerigaabo, oo leh buuraha Cal Madow iyo xeeb dheer oo Khaliijka Cadmeed ah.',
         geology: 'Dhagax aasaasi ah oo buuraley ah galbeedka iyo suxul balaaran oo Mesozoic ah bariga.',
-        minerals: { gems: [], metals: ['Dahab', 'Tin', 'Copper', 'Lead', 'Magnetite'], industrial: ['Barite', 'Dhagaxa kalluunka'], energy: ['Lignite yar'] },
+        minerals: { gems: [], metals: ['Dahab', 'Tin', 'Copper', 'Lead', 'Magnetite', 'Tantalite'], industrial: ['Barite', 'Dhagaxa kalluunka', 'Mica', 'Guano'], energy: ['Lignite yar'] },
       },
       sool: {
         name: 'Sool',

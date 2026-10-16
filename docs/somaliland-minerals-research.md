@@ -54,8 +54,15 @@ Compiled 17 Oct 2026 from open web sources only (no dark-web or restricted sourc
 ## Reported across Somaliland without a locality
 Ruby, amethyst, tourmaline, topaz, spinel, zircon, jadeite, citrine, diopside, epidote, opal, manganese (rhodonite), iron, mica, feldspar (potassium feldspar tests reported), marble, quartz glass sand, asbestos, bismuth, molybdenum, niobium (pyrochlore, columbite), rutile, barite, fluorite.
 
+## Round 2: data filed under Somalia, northern Somalia or British Somaliland
+Searched BGS colonial survey records, a 2013 overview paper on Somalia's minerals, USGS publications and 2024-25 news. Nothing here is secret. It is simply catalogued under other names or is hard to find. The Kamenov and Petrov paper and the IUREP uranium report could not be read (the sites block automated access); their findings reach us only through the IJISRT review.
+- BGS Earthwise (Somaliland Protectorate surveys 1947-1956): a government survey from 1952 mapped about 7,000 of roughly 8,000 square miles of basement; beryl, columbite and mica in later pegmatite dykes (a small company mined beryl); samarskite, allanite and monazite from pegmatite areas; a small cassiterite-rich vein in the north-east; frequent but uneconomic galena; manganese silicates, molybdenite, rutile; scores of millions of tonnes of gypsum-anhydrite 9 to 25 miles from Berbera; Shilemadu syenites at Nogal; oil seep at Dagahh Shabel; Pamphlet No. 1 (1954) on gypsum and anhydrite.
+- Hussein 2013 (Minerals of Somalia): Dharkainle/Darkainle alkaline complex (about 33 x 3 km, nepheline syenite and carbonatite) north-east of Borama with apatite; rock salt at Zeila; gypsum-anhydrite south of Berbera (about 5 Mt gypsum, over 2.5 Mt anhydrite); piezoelectric quartz at Lafaruug and Elayo (Soviet work in the early 1980s, text garbled); copper-bearing quartzites at Bohl; tin and tin-tantalum at Dhalan, Majiyahan and Elayo (Erigavo district), mined by the British before the Second World War and by Bulgarian Technoexport in the 1970s; kaolin between Las Gal and Merodile; gold at Arapsiyo (13.5 ppm assay) and Abdulkadir; molybdenum and bismuth around Arabsiyo-Borama; platinum-group anomalies at the Mandhera complex and near the Hamar gabbro at Barkassan; simpsonite (a tantalum mineral) in beach sands east of Berbera; guano on Hiis and Mait islands.
+- Lithium: Saudi company Kilomass reportedly secured an exploration licence in June 2024 (area not stated; Ministry could not be reached for details). Officials cite lithium potential, but independent surveys are limited. A social-media post claims an earlier Chinese licence in the west; unverified. Treat lithium as reported, not verified.
+- USGS peralkaline granite report (OFR 83-389) covers Saudi Arabia only; no Somali data.
+
 ## Not found in public sources
-- Lithium and chromite as named deposits, rare-earth deposits (other than monazite in coastal sands) and uranium were not found for Somaliland. Pegmatites and mafic-ultramafic bodies make them geologically plausible, but only the company's own data can support them. The map therefore does not list lithium; chromium appears only as anomalies in Maroodi Jeex.
+- Lithium as a confirmed deposit, chromite as a named deposit, rare-earth deposits (other than monazite and allanite) and uranium were not found for Somaliland. Pegmatites and mafic-ultramafic bodies make them geologically plausible, but only the company's own data can support them. The map therefore lists lithium only as reported and unverified; chromium appears only as anomalies in Maroodi Jeex.
 
 ## Sources
 - Untapped Mineral Potential of Somaliland: A review (IJISRT, 2024): https://ijisrt.com/assets/upload/files/IJISRT24OCT050.pdf
@@ -69,3 +76,7 @@ Ruby, amethyst, tourmaline, topaz, spinel, zircon, jadeite, citrine, diopside, e
 - Wikipedia, Geology of Somaliland: https://en.wikipedia.org/wiki/Geology_of_Somaliland
 - SOGERA, Somalia's mineral resources: https://sogera.org/somalias-mineral-resources/
 - Somaliland Central, minerals list: https://somalilandcentral.com/minerals-somaliland/
+- BGS Earthwise, Somaliland Protectorate colonial surveys: https://earthwise.bgs.ac.uk/index.php/Somaliland_Protectorate_%E2%80%94_Colonial_Geological_Surveys_1947%E2%80%931956
+- Hussein (2013), Minerals of Somalia: https://www.academia.edu/15289231/Minerals_of_Somalia_From_exploration_to_artisanal_production_to_export
+- Somaliland Chronicle on Kilomass: https://somalilandchronicle.com/2024/06/11/saudi-mining-company-kilomass-secures-lithium-exploration-deal-in-somaliland/
+- USGS Mineral Resources Data System (Somalia): https://mrdata.usgs.gov/mrds/
