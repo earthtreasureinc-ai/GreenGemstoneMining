@@ -4,6 +4,8 @@ import { MAP_CORRIDOR, MAP_GEOLOGY, MAP_OUTLINE, MAP_PLACES, MAP_REGIONS, MAP_VI
 import { EVIDENCE, OCCURRENCES, SOURCES } from '@/data/geology';
 import { KM100, project, unproject } from '@/data/geoProject';
 import { REGIONS } from '@/data/site';
+import { LOCALITIES, MINERAL_COUNT, MINERAL_GROUP, mineralsInRegion, recordsFor } from '@/data/minerals';
+import { FINDER, mineralName } from '@/data/mineralText';
 import { useI18n } from '@/i18n/core';
 
 type Layer = 'regions' | 'geology';
@@ -35,17 +37,29 @@ const SWEEP = Array.from({ length: 10 }, (_, i) => {
 
 /** Region borders are approximate and the geology layer is generalised, so the map says so in its note. */
 export default function SomalilandMap() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const F = FINDER[lang];
   const p = t.projects;
   const [layer, setLayer] = useState<Layer>('regions');
   const [selected, setSelected] = useState<string>('awdal');
   const [occ, setOcc] = useState<string | null>('borama');
+  const [mineral, setMineral] = useState<string | null>(null);
+  const [loc, setLoc] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string>('');
   const svgRef = useRef<SVGSVGElement>(null);
   const active = p.regions[selected];
 
   const markers = useMemo(() => OCCURRENCES.map((o) => ({ ...o, pos: project(o.lon, o.lat) })), []);
+  const pins = useMemo(() => LOCALITIES.filter((l) => l.precision === 'point' && !l.outside && l.region).map((l) => ({ ...l, pos: project(l.lon!, l.lat!) })), []);
+  const results = useMemo(() => (mineral ? recordsFor(mineral) : []), [mineral]);
+  const hitRegions = useMemo(() => new Set(results.map((r) => r.region)), [results]);
+  const activeLoc = pins.find((l) => l.id === loc);
+  const pickMineral = (m: string | null) => {
+    setMineral(m);
+    setLoc(null);
+  };
+  const regionMinerals = useMemo(() => mineralsInRegion(selected), [selected]);
   const regionMarkers = markers.filter((m) => m.region === selected);
 
   const selectRegion = (id: string) => {
@@ -74,7 +88,7 @@ export default function SomalilandMap() {
   const activeMarker = markers.find((m) => m.id === occ);
 
   return (
-    <div className="geomap">
+    <div className={`geomap ${mineral ? 'is-finding' : ''}`}>
       <div className="geomap-stage">
         <div className="geomap-toolbar">
           <span className="geomap-title"><i className="blink" />{p.mapTitle}</span>
@@ -187,7 +201,7 @@ export default function SomalilandMap() {
               return (
                 <g
                   key={r.id}
-                  className={`gm-region ${on ? 'is-selected' : ''} ${hovered === r.id ? 'is-hover' : ''}`}
+                  className={`gm-region ${on ? 'is-selected' : ''} ${hovered === r.id ? 'is-hover' : ''} ${mineral && hitRegions.has(r.id) ? 'has-mineral' : ''}`}
                   role="button"
                   tabIndex={0}
                   aria-pressed={on}
@@ -232,6 +246,21 @@ export default function SomalilandMap() {
               </g>
             ))}
 
+            {/* every USGS-recorded site, bright when it holds the chosen mineral */}
+            <g className="gm-pins">
+              {pins.map((l) => {
+                const hit = !!mineral && l.minerals.includes(mineral);
+                return (
+                  <g key={l.id} className={`gm-pin ${hit ? `hit kind-${MINERAL_GROUP[mineral!] === 'gems' ? 'gem' : MINERAL_GROUP[mineral!] === 'metals' ? 'metal' : MINERAL_GROUP[mineral!] === 'energy' ? 'energy' : 'industrial'}` : ''} ${loc === l.id ? 'is-on' : ''}`} transform={`translate(${l.pos[0]} ${l.pos[1]})`} onClick={() => { setLoc(l.id); setSelected(l.region!); }}>
+                    <circle r="9" className="pin-hit" />
+                    {hit && <circle r="8" className="pin-ring" />}
+                    <circle r={hit ? 4.2 : 2.2} className="pin-core" />
+                    <title>{l.name}</title>
+                  </g>
+                );
+              })}
+            </g>
+
             {/* recorded mineral occurrences */}
             {markers.map((m, i) => {
               const on = occ === m.id;
@@ -263,7 +292,13 @@ export default function SomalilandMap() {
               );
             })}
 
-            {activeMarker && (
+            {activeLoc && (
+              <g className="gm-callout" transform={`translate(${activeLoc.pos[0]} ${activeLoc.pos[1]})`} pointerEvents="none">
+                <path d="M0 -8L0 -30" className="callout-line" />
+                <text y="-36" textAnchor="middle" className="callout-text">{activeLoc.name}</text>
+              </g>
+            )}
+            {!activeLoc && activeMarker && (
               <g className="gm-callout" transform={`translate(${activeMarker.pos[0]} ${activeMarker.pos[1]})`} pointerEvents="none">
                 <path d="M0 -12L0 -34" className="callout-line" />
                 <text y="-40" textAnchor="middle" className="callout-text">{p.occurrences[activeMarker.id].name}</text>
@@ -328,11 +363,15 @@ export default function SomalilandMap() {
             <dd>{active.geology}</dd>
             <dt>{p.mineralsLabel}</dt>
             <dd className="mineral-groups">
-              {GROUPS.filter((g) => active.minerals[g].length > 0).map((g) => (
+              {GROUPS.filter((g) => regionMinerals[g].length > 0).map((g) => (
                 <div key={g} className="mg">
                   <span className="mg-label">{p.groups[g]}</span>
                   <span className="chips">
-                    {active.minerals[g].map((m) => <span key={m} className={`chip chip-${g}`}>{m}</span>)}
+                    {regionMinerals[g].map((m) => (
+                      <button key={m} type="button" className={`chip chip-${g} chip-btn`} aria-pressed={mineral === m} onClick={() => pickMineral(mineral === m ? null : m)}>
+                        {mineralName(m, lang)}
+                      </button>
+                    ))}
                   </span>
                 </div>
               ))}
@@ -357,6 +396,49 @@ export default function SomalilandMap() {
         </div>
         <p className="national"><strong>{p.nationalLabel}:</strong> {p.national}</p>
       </aside>
+
+      <section className="geomap-finder" aria-label={F.title}>
+        <div className="finder-head">
+          <h4>{F.title}</h4>
+          <p>{F.hint}</p>
+          {mineral && <button type="button" className="finder-clear" onClick={() => pickMineral(null)}>{F.clear}</button>}
+        </div>
+        <div className="finder-groups">
+          {GROUPS.map((g) => (
+            <div key={g} className="mg">
+              <span className="mg-label">{p.groups[g]}</span>
+              <span className="chips">
+                {Object.keys(MINERAL_GROUP).filter((m) => MINERAL_GROUP[m] === g && MINERAL_COUNT[m]).map((m) => (
+                  <button key={m} type="button" className={`chip chip-${g} chip-btn`} aria-pressed={mineral === m} onClick={() => pickMineral(mineral === m ? null : m)}>
+                    {mineralName(m, lang)} <small>{MINERAL_COUNT[m]}</small>
+                  </button>
+                ))}
+              </span>
+            </div>
+          ))}
+        </div>
+        {mineral && (
+          <div className="finder-results" aria-live="polite">
+            <h5>{mineralName(mineral, lang)} · {F.records(results.length)}</h5>
+            <ul>
+              {results.map((l) => (
+                <li key={l.id} className={`fr fr-${l.precision}`}>
+                  <button type="button" disabled={!(l.precision === 'point' && !l.outside && l.region)} aria-pressed={loc === l.id} onClick={() => { setLoc(l.id); setSelected(l.region!); }}>
+                    <strong>{l.name ?? (l.region ? p.regions[l.region].name : F.reported)}{l.name && l.region ? ` · ${p.regions[l.region].name}` : ''}</strong>
+                    <span className="fr-meta">
+                      {l.precision === 'point' ? `${fmt(l.lon!, l.lat!)} · ${F.point}` : l.precision === 'district' ? F.district : F.reported}
+                      {l.outside && ` · ${F.outside}`}
+                      {l.basis && ` · ${F.basis[l.basis]}`}
+                    </span>
+                    <span className="fr-src">{F.source}: {l.link ? <a href={l.link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{l.source}</a> : l.source}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="finder-note">{F.precisionNote}</p>
+          </div>
+        )}
+      </section>
 
       <div className="geomap-foot">
         <p className="geomap-note">{p.note}</p>

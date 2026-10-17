@@ -774,3 +774,38 @@ html[lang='zh-Hans'] .display, html[lang='ar'] .display { font-size: clamp(26px,
 /* full company name in the header: shrink and wrap on narrow screens */
 .hdr-brand span { line-height: 1.15; }
 @media (max-width: 640px) { .hdr-brand { font-size: 13px; gap: 8px; min-width: 0; } .hdr-brand span { max-width: 150px; } }
+
+/* mineral finder */
+.geomap-finder { grid-column: 1 / -1; display: grid; gap: 16px; padding: 22px; border: 1px solid rgba(98, 245, 214, 0.2); border-radius: 22px; background: linear-gradient(160deg, #0b1f1e, #060e10); }
+.finder-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+.finder-head h4 { font-family: var(--display); font-size: 20px; color: var(--neon); margin: 0; }
+.finder-head p { color: var(--cream-dim); font-size: 13.5px; margin: 0; flex: 1 1 240px; }
+.finder-clear { font: inherit; font-size: 12.5px; color: var(--cream); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.finder-groups { display: grid; gap: 14px; }
+.chip-btn { font-family: inherit; cursor: pointer; transition: all 0.2s var(--ease); }
+.chip-btn small { opacity: 0.65; margin-inline-start: 4px; font-size: 11px; }
+.chip-btn:hover { filter: brightness(1.25); }
+.chip-btn[aria-pressed='true'] { background: var(--neon); color: #03201b; border-color: var(--neon); box-shadow: 0 0 16px rgba(98, 245, 214, 0.45); }
+.chip-btn:focus-visible { outline: 2px solid var(--neon); outline-offset: 2px; }
+.finder-results h5 { font-family: var(--display); font-size: 17px; color: var(--cream); margin: 4px 0 10px; }
+.finder-results ul { display: grid; gap: 8px; list-style: none; padding: 0; margin: 0; max-height: 440px; overflow: auto; }
+.fr button { width: 100%; display: grid; gap: 3px; text-align: start; font: inherit; color: var(--cream-mid); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line-soft); border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.fr button:disabled { cursor: default; opacity: 0.85; }
+.fr button:not(:disabled):hover, .fr button[aria-pressed='true'] { border-color: var(--neon); }
+.fr strong { color: var(--cream); font-size: 14px; }
+.fr-meta, .fr-src { font-size: 12px; line-height: 1.5; color: var(--cream-dim); }
+.fr-src a { color: var(--gold-br); text-decoration: underline; }
+.fr-district button, .fr-reported button { border-style: dashed; }
+.finder-note { font-size: 12px; color: var(--cream-dim); margin-top: 10px; }
+.gm-pin { cursor: pointer; }
+.gm-pin .pin-hit { fill: transparent; }
+.gm-pin .pin-core { fill: rgba(255, 255, 255, 0.55); }
+.is-finding .gm-pin:not(.hit) { opacity: 0.25; }
+.gm-pin.hit { --k: #f6cf62; }
+.gm-pin.hit .pin-core { fill: var(--k); stroke: #fff; stroke-width: 1.4; filter: drop-shadow(0 0 5px var(--k)); }
+.gm-pin .pin-ring { fill: none; stroke: var(--k); stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: gm-ping 2.2s ease-out infinite; }
+.gm-pin.is-on .pin-core { stroke-width: 2.6; }
+@keyframes gm-ping { from { transform: scale(0.5); opacity: 0.9; } to { transform: scale(2.4); opacity: 0; } }
+.is-finding .gm-region.has-mineral .gm-hit { fill-opacity: 0.16; stroke: var(--neon); stroke-width: 2; }
+.is-finding .gm-region:not(.has-mineral) .gm-hit { stroke-opacity: 0.25; }
+@media (prefers-reduced-motion: reduce) { .gm-pin .pin-ring { animation: none; opacity: 0.5; } }

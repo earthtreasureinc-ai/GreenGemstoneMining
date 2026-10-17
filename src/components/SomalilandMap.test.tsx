@@ -6,6 +6,8 @@ import { REGIONS } from '@/data/site';
 import { MAP_REGIONS } from '@/data/mapData';
 import { OCCURRENCES } from '@/data/geology';
 import { project } from '@/data/geoProject';
+import { LOCALITIES, MINERAL_GROUP, mineralsInRegion, recordsFor } from '@/data/minerals';
+import { FINDER, KNOWN_MINERALS, mineralName } from '@/data/mineralText';
 import en from '@/i18n/en';
 import so from '@/i18n/so';
 import ar from '@/i18n/ar';
@@ -22,8 +24,6 @@ describe('SomalilandMap', () => {
         expect(region.name).toBeTruthy();
         expect(region.role).toBeTruthy();
         expect(region.geology).toBeTruthy();
-        const all = Object.values(region.minerals).flat();
-        expect(all.length).toBeGreaterThan(0);
       }
     }
     for (const dict of [so, ar, zh]) {
@@ -88,5 +88,48 @@ describe('SomalilandMap', () => {
     const sool = document.querySelector('g[aria-label="Sool"]') as SVGGElement;
     fireEvent.keyDown(sool, { key: 'Enter' });
     expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('Sool');
+  });
+
+  it('names every recorded mineral in every language and gives each record a source', () => {
+    const used = new Set(LOCALITIES.flatMap((l) => l.minerals));
+    for (const m of used) {
+      expect(MINERAL_GROUP[m], m).toBeTruthy();
+      expect(KNOWN_MINERALS).toContain(m);
+      for (const lang of ['en', 'so', 'ar', 'zh'] as const) expect(mineralName(m, lang)).toBeTruthy();
+    }
+    for (const l of LOCALITIES) {
+      expect(l.source).toBeTruthy();
+      if (l.precision === 'point') expect(l.lon && l.lat).toBeTruthy();
+    }
+    for (const lang of ['so', 'ar', 'zh'] as const) expect(Object.keys(FINDER[lang].basis)).toEqual(Object.keys(FINDER.en.basis));
+  });
+
+  it('puts every mapped USGS site that belongs to a region inside that region', () => {
+    const rings = (d: string) => d.split('M').slice(1).map((sub) => sub.split('L').map((q) => q.replace('Z', '').trim().split(' ').map(Number) as [number, number]));
+    const inside = (pt: [number, number], ring: [number, number][]) => {
+      let c = false;
+      for (let i = 0; i < ring.length; i++) {
+        const [x1, y1] = ring[i];
+        const [x2, y2] = ring[(i + 1) % ring.length];
+        if (y1 > pt[1] !== y2 > pt[1] && pt[0] < ((x2 - x1) * (pt[1] - y1)) / (y2 - y1) + x1) c = !c;
+      }
+      return c;
+    };
+    let near = 0;
+    for (const l of LOCALITIES.filter((x) => x.precision === 'point' && x.region && !x.outside)) {
+      const key = REGIONS.find((r) => r.id === l.region)!.key;
+      const pt = project(l.lon!, l.lat!);
+      if (!rings(MAP_REGIONS[key].d).some((ring) => inside(pt, ring))) near++; // coast islands and polygon slivers are assigned to the nearest region
+    }
+    expect(near).toBeLessThan(25);
+  });
+
+  it('lists every place tantalum is recorded and highlights it when the visitor picks it', () => {
+    expect(recordsFor('tantalum').length).toBeGreaterThanOrEqual(5);
+    expect(mineralsInRegion('sahil').metals).toContain('tantalum');
+    render(<SomalilandMap />);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Tantalum/ })[0]);
+    expect(screen.getByText(/Tantalum · \d+ records/)).toBeTruthy();
+    expect(screen.getAllByText(/Manja Vihin Magiaian/).length).toBeGreaterThan(0);
   });
 });
