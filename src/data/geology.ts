@@ -18,14 +18,14 @@ export const OCCURRENCES: Occurrence[] = [
   { id: 'abdiqadir', region: 'awdal', kind: 'metal', lon: 43.1, lat: 10.25 },
   { id: 'zeilaSalt', region: 'awdal', kind: 'industrial', lon: 43.45, lat: 11.15 },
   { id: 'dhagaxKuure', region: 'maroodiJeex', kind: 'metal', lon: 43.5, lat: 9.78 },
-  { id: 'darkainle', region: 'maroodiJeex', kind: 'metal', lon: 43.75, lat: 9.95 },
+  { id: 'darkainle', region: 'awdal', kind: 'metal', lon: 43.28, lat: 10.4 },
   { id: 'hargeisaWest', region: 'maroodiJeex', kind: 'gem', lon: 43.85, lat: 9.57 },
   { id: 'berbera', region: 'sahil', kind: 'industrial', lon: 45.0, lat: 10.4 },
   { id: 'daban', region: 'sahil', kind: 'energy', lon: 45.2, lat: 10.3 },
   { id: 'lafaruug', region: 'sahil', kind: 'gem', lon: 44.6, lat: 10.02 },
   { id: 'togdheerJade', region: 'togdheer', kind: 'gem', lon: 45.45, lat: 9.62 },
   { id: 'laasaSurad', region: 'sanaag', kind: 'metal', lon: 46.95, lat: 10.55 },
-  { id: 'dalan', region: 'sanaag', kind: 'metal', lon: 48.1, lat: 10.8 },
+  { id: 'dalan', region: 'sanaag', kind: 'metal', lon: 48.82, lat: 11.08 },
   { id: 'nugaal', region: 'sool', kind: 'energy', lon: 48.3, lat: 8.9 },
 ];
 

@@ -80,3 +80,13 @@ Searched BGS colonial survey records, a 2013 overview paper on Somalia's mineral
 - Hussein (2013), Minerals of Somalia: https://www.academia.edu/15289231/Minerals_of_Somalia_From_exploration_to_artisanal_production_to_export
 - Somaliland Chronicle on Kilomass: https://somalilandchronicle.com/2024/06/11/saudi-mining-company-kilomass-secures-lithium-exploration-deal-in-somaliland/
 - USGS Mineral Resources Data System (Somalia): https://mrdata.usgs.gov/mrds/
+
+## Round 3: exact locations (USGS MRDS) and the mineral finder
+- Source: USGS Mineral Resources Data System records for northern Somalia, read one by one from https://mineralresourcemap.com/detail/<id> (ids 10011781 to 10011896). 81 records fall in the Somaliland area; the raw table is in `data-raw/mrds.tsv` and `scripts/build-minerals.py` turns it into `src/data/mineralsMrds.ts`.
+- Coordinates were transcribed by USGS from 1950s-60s Protectorate Geological Survey maps (Daniels 1960, Mason 1962, Hunt 1951/1958/1960, Gellatly 1960, Greenwood 1960, Farquharson 1924, Holmes 1954, UNDP 1970, Macfadyen 1952) and are rounded to about 2 km. They need field checking.
+- Records at or beyond about 49E (Manja Vihin Magiaian, Arargob, Tomassah, Abderesach) lie outside the six regions shown, so they are listed but not pinned.
+- Region assignment uses the generalised map polygons; the Berbera-Sheikh area (north of 9.95N, west of 45.5E) is assigned to Sahil.
+- New minerals found at mapped sites: graphite, kyanite, talc, vermiculite, tungsten, strontium, bromine (hot springs at Bihen Gaha, Biyo Gora, Dubar, Hur), silver, fuller's earth, oil shale, uranium (Darkainle), manganese (rhodonite) at about 10 sites, asbestos (Qodli, Daarbuduq), barite and galena across Sanaag (Veliya Tug, Mokhor Holeh, Karin Kul, Karajiv, Unkah), copper at Gal Hamud, Elan Gubado and Fulanful, molybdenite at Dobo Well and Barkasan.
+- Corrections: the Darkainle marker moved to 43.28E 10.40N (Awdal) and Dalan to 48.82E 11.08N (Sanaag), as the USGS records give.
+- Tantalum: no mapped site inside the six regions. Recorded at Manja Vihin Magiaian (tin-tantalum, border zone) and as region-level reports (Awdal, Sahil, Sanaag). Exact positions are not published.
+- Zinc and nickel are no longer listed for Awdal (zinc stays as a base-metal listing; nickel is not) because no source in these notes places nickel there; nickel stays in Maroodi Jeex (Arabsiyo anomalies).
