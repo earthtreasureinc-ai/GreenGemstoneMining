@@ -809,3 +809,9 @@ html[lang='zh-Hans'] .display, html[lang='ar'] .display { font-size: clamp(26px,
 .is-finding .gm-region.has-mineral .gm-hit { fill-opacity: 0.16; stroke: var(--neon); stroke-width: 2; }
 .is-finding .gm-region:not(.has-mineral) .gm-hit { stroke-opacity: 0.25; }
 @media (prefers-reduced-motion: reduce) { .gm-pin .pin-ring { animation: none; opacity: 0.5; } }
+
+/* the sticky map must stop at the end of its own row, so the finder below is never covered */
+.geomap { display: block; }
+.geomap-main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(20px, 3vw, 44px); align-items: start; }
+.geomap-finder, .geomap-foot { margin-top: clamp(24px, 3vw, 40px); }
+@media (max-width: 960px) { .geomap-main { grid-template-columns: minmax(0, 1fr); } }

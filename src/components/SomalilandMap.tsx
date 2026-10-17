@@ -89,6 +89,7 @@ export default function SomalilandMap() {
 
   return (
     <div className={`geomap ${mineral ? 'is-finding' : ''}`}>
+      <div className="geomap-main">
       <div className="geomap-stage">
         <div className="geomap-toolbar">
           <span className="geomap-title"><i className="blink" />{p.mapTitle}</span>
@@ -396,6 +397,8 @@ export default function SomalilandMap() {
         </div>
         <p className="national"><strong>{p.nationalLabel}:</strong> {p.national}</p>
       </aside>
+
+      </div>
 
       <section className="geomap-finder" aria-label={F.title}>
         <div className="finder-head">
