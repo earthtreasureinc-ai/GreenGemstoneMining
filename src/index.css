@@ -770,3 +770,7 @@ html[lang='zh-Hans'] .display, html[lang='ar'] .display { font-size: clamp(26px,
 @media (min-width: 961px) { .geomap-stage { position: sticky; top: 92px; } }
 @media (max-width: 560px) { .callout-text { font-size: 20px; } .gm-callout { display: none; } }
 .geomap-readout { left: auto; right: 34px; }
+
+/* full company name in the header: shrink and wrap on narrow screens */
+.hdr-brand span { line-height: 1.15; }
+@media (max-width: 640px) { .hdr-brand { font-size: 13px; gap: 8px; min-width: 0; } .hdr-brand span { max-width: 150px; } }
