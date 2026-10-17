@@ -1,0 +1,82 @@
+dep_id	mrds	name	commodities	lat	lon	host	ref
+10011813	D006958	Rakdasafaka Occurrence	graphite	10.00068	43.83443	schist	Daniels 1960 Pamphlet 3
+10011814	D006959	Mirid Occurrence	kyanite	10.15066	43.75111	schist	Daniels 1960 Pamphlet 3
+10011815	D006960	Damal Occurrence	kyanite	10.53395	43.30111	schist	Daniels 1960 Pamphlet 3
+10011816	D006961	Ubali Occurrence	manganese (rhodonite)	9.934	43.9011	schist	Daniels 1960 Pamphlet 3
+10011817	D006962	Wai-Wai Occurrence	quartz	10.21732	43.66778	schist	Daniels 1960 Pamphlet 3
+10011818	D006963	Darkainle Occurrence	niobium (pyrochlore); uranium	10.40063	43.28444	schist	Daniels 1960 Pamphlet 3
+10011819	D006964	Waran-Weis Occurrence	titanium (rutile)	10.15065	43.86777	schist	Daniels 1960 Pamphlet 3
+10011821	D006966	Rakdasafaka Occurrence (gem)	gemstone (spinel)	9.95067	43.8511	mafic metamorphic rock	Daniels 1960 Pamphlet 3
+10011822	D006967	Qoton Occurrence	talc-soapstone	10.4673	43.13445	ultramafic intrusive	Daniels 1960 Pamphlet 3
+10011823	D006968	Biji Occurrence	talc; vermiculite (gangue corundum, spinel)	10.16732	43.98443	marble	Daniels 1960 Pamphlet 3
+10011824	D006969	Biyo Dader Occurrence	silica sand	9.91735	43.53444	Adigrat Sandstone	Daniels 1960 Pamphlet 3
+10011825	D006970	Mur Bakayale Mine	beryllium; niobium; mica; titanium	10.01733	44.86776	schist	Mason 1962 Report 7
+10011826	D006971	Las Gal Tug Occurrence	beryllium (beryl; tourmaline gangue)	10.16732	44.73442	gabbro	Mason 1962 Report 7
+10011827	D006972	Teaq Tug Occurrence	beryllium (beryl)	10.06733	44.86776	gneiss	Mason 1962 Report 7
+10011828	D006973	Qodli Occurrence	asbestos	10.13398	44.68442	schist/granite	Mason 1962 Report 7
+10011829	D006974	Sarar Awr Occurrence	silica sand	10.01733	44.51776	Nubian Sandstone	Mason 1962 Report 7
+10011830	D006976	Afka Dehemid Prospect	talc-soapstone	10.01733	45.70107	metamorphic (unstated)	Gellatly 1960 Report 6
+10011831	D006977	Hulul Prospect	barite; lead (galena); fluorite; copper (chalcopyrite)	10.20065	45.08441	granite	Hunt 1960 Report 4
+10011832	D006978	Ido Faito Occurrence	beryllium (beryl)	10.16732	45.00109	unstated	Hunt 1960 Report 4
+10011820	D006965	Biyo Dader Occurrence (Ti)	titanium (rutile)	9.91735	43.53444	schist	Daniels 1960 Pamphlet 3
+10011781	D006906	Arargob Prospect	barite; galena	11.33386	49.98433	Tisje limestone	Holmes 1954
+10011782	D006907	Bender Ziada Prospect	tin (cassiterite)	11.2672	48.96769	gravel	Holmes 1954
+10011785	D006912	Dananjieh Prospect	barite; fluorite; galena	10.23397	45.03441	schist	Hunt 1960; UNDP 1970
+10011786	D006913	Darreh Hos Prospect	beryl; columbite; muscovite (Nb, Be)	9.984	44.91775	pegmatite	Hunt 1958 Adadleh area
+10011788	D006915	Fulanful Prospect	lead; copper; iron	10.20065	45.13441	limestone	UNDP 1970
+10011791	D006920	Hudiso Prospect	garnet; kyanite; rhodonite (Mn)	10.03399	45.20108	schist	UNDP 1970; Hunt 1960
+10011792	D006921	Manja Vihin Magiaian Mine	tin; tungsten; tantalum; niobium	11.08388	49.01769	gneiss (basalt)	Holmes 1954
+10011793	D006924	Tomassah Occurrence	iron (hematite)	11.38385	49.91767	limestone	Holmes 1954
+10011794	D006925	Wiget Prospect	lead; copper	10.10066	45.13441	hornfels	UNDP 1970
+10011795	D006935	Lafarug Prospect	garnet; muscovite mica	10.03399	44.80109	schist	Hunt 1951
+10011796	D006936	Marso Prospect	garnet; muscovite	10.00067	45.00109	schist	Hunt 1951
+10011797	D006938	Huquf Prospect	garnet	9.934	45.86774	schist	Hunt 1951
+10011798	D006939	Salawel Prospect	manganese	10.03399	45.13441	schist	Hunt 1951
+10011799	D006942	Bihen Gaha Hot Springs	bromine	10.41729	45.65107	n/s	Farquharson 1924
+10011800	D006944	Dagahh Kuled Prospect	titanium (rutile)	11.03389	48.83435	schist	Hunt 1951
+10011801	D006946	Mait Island Guano Mine	phosphate (guano)	11.20055	47.21772	n/r	Hunt 1951
+10011802	D006947	Biyo Gora Hot Spring	bromine	10.38396	45.20108	n/s	Somaliland Oil Expl. Co. 1954
+10011803	D006948	Dubar Hot Spring	bromine	10.33396	45.06775	n/r	Somaliland Oil Expl. Co. 1954
+10011804	D006949	Hur Hot Spring	bromine	10.68393	45.9344	n/s	Somaliland Oil Expl. Co. 1954
+10011805	D006950	Qoton Dabo Occurrence	iron (hematite)	9.20074	44.66776	Nubian Sandstone	Macfadyen 1952
+10011806	D006951	Arorigaben Occurrence	iron (hematite)	9.21741	45.05108	n/s	Macfadyen 1952
+10011807	D006952	Doboweina Occurrence	iron (hematite)	9.30073	44.86775	Nubian Sandstone	Macfadyen 1952
+10011808	D006953	Elk Occurrence	iron (hematite)	8.96743	45.3344	Nubian Sandstone	Macfadyen 1952
+10011809	D006954	Hargeisa-Awareh Road Occurrence	iron (hematite)	9.35073	44.06777	Nubian Sandstone	Macfadyen 1952
+10011810	D006955	Waran-Weis Occurrence (Be/Nb)	beryllium; niobium; quartz	10.15065	43.8511	schist	Daniels 1960 Pamphlet 3
+10011811	D006956	Ubali Occurrence (Be)	beryllium (beryl)	9.93401	43.7511	schist	Daniels 1960 Pamphlet 3
+10011812	D006957	Marodile Occurrence	beryllium; graphite	9.91735	43.9011	schist	Daniels 1960 Pamphlet 3
+10011851	D007007	Gal Hamud Occurrence	copper (chalcopyrite)	10.16732	45.05108	Adigrat Sandstone	Hunt 1960 Report 4
+10011852	D007008	Elan Gubado Prospect	copper (chalcopyrite, malachite)	10.00067	45.20108	granite	Hunt 1960 Report 4
+10011853	D007009	Ardahh Prospect	lead (galena); barite; fluorite; iron	10.16732	45.08441	Adigrat Sandstone	Hunt 1960 Report 4
+10011854	D007011	Hul Qabobe Occurrence	iron (magnetite; apatite gangue)	10.00067	45.05108	amphibole schist	Hunt 1960 Report 4
+10011855	D007012	Didin Occurrence	iron (magnetite; apatite gangue)	10.18398	45.01775	gabbro	Hunt 1960 Report 4
+10011856	D007014	Daimoleh Wein Occurrence	iron; manganese (rhodonite)	10.10066	45.05108	migmatite/granite	Hunt 1960 Report 4
+10011857	D007016	Marso Occurrence (Mn)	manganese (rhodonite)	9.984	45.06775	schist	Hunt 1960 Report 4
+10011858	D007018	Lalis Occurrence	manganese (rhodonite)	10.08399	45.16775	schist	Hunt 1960 Report 4
+10011859	D007021	Manja Asseh Occurrence	manganese (rhodonite)	10.13398	45.11775	schist	Hunt 1960 Report 4
+10011860	D007022	Luqunlo Ad Occurrence	manganese	9.984	45.16775	granite	Hunt 1960 Report 4
+10011861	D007024	Sanka Hodeiga Occurrence	quartz	10.03399	45.10108	n/s	Hunt 1960 Report 4
+10011862	D007026	Dagahh Dai Occurrence	talc-soapstone	9.96734	45.05108	schist	Hunt 1960 Report 4
+10011863	D007027	Shabel Weina Occurrence	talc-soapstone	10.01733	45.03441	schist	Hunt 1960 Report 4
+10011864	D007029	Veliya Tug Occurrence	lead (galena); barite	11.06722	48.75102	limestone	Greenwood 1960 Report 3
+10011865	D007031	Mokhor Holeh Occurrence	lead (galena); barite	11.06722	48.88435	mudstone	Greenwood 1960 Report 3
+10011866	D007032	Karin Kul Occurrence	lead (galena); barite	11.13388	48.48436	n/s	Greenwood 1960 Report 3
+10011867	D007034	Karajiv Occurrence	lead (galena); barite	11.10055	48.66769	n/s	Greenwood 1960 Report 3
+10011868	D007036	Unkah Prospect	lead; silver; barite	10.08398	48.45102	slate	Farquharson 1924
+10011869	D007039	Darinwadu Tug Occurrence	garnet	10.53395	43.31778	schist	Farquharson 1924
+10011870	D007040	Ardeh Prospect	barite	10.16732	45.13441	gneiss	Farquharson 1924
+10011871	D007041	Dobo Well Occurrence	molybdenum (molybdenite)	10.25065	43.21778	gneiss	Farquharson 1924
+10011872	D007043	Himbir Wein Occurrence	strontium	10.25064	45.51775	Anhydrite Series shale	Farquharson 1924
+10011873	D007044	Bayal Well Occurrence	fuller's earth (montmorillonite)	10.21731	45.13441	n/s	Farquharson 1924
+10011874	D007046	Durdur Ad Tug	crushed stone; oil shale	10.23398	43.60111	Bihen Limestone/shale	Farquharson 1924
+10011875	D007047	Dalan Prospect	tin (cassiterite)	11.08388	48.81769	gabbro	Greenwood 1960
+10011876	D007050	Dobo Occurrence	niobium; molybdenum	10.30064	43.30111	schist	Daniels 1960 Pamphlet 3
+10011877	D007051	Hamar Occurrence	beryllium; iron; graphite	9.96734	43.8511	schist	Daniels 1960 Pamphlet 3
+10011878	D007053	Mirid Occurrence (Cu/Ba)	copper; barite; kyanite; beryllium	10.18398	43.61778	schist	Daniels 1960 Pamphlet 3
+10011879	D007055	Il Haggar Occurrence	mica; molybdenum; beryllium; niobium	10.21732	43.71778	schist	Daniels 1960 Pamphlet 3
+10011880	D007056	Bawn Occurrence	beryllium (beryl)	10.20065	43.10112	schist	Daniels 1960 Pamphlet 3
+10011893	D007078	Asilihe Prospect	tin (cassiterite)	11.10055	48.83435	Inda Ad sandstone	Greenwood 1960; Pallister 1959
+10011894	D007079	Daarbuduq Occurrence	asbestos (anthophyllite)	9.85068	44.53442	n/s	Hunt 1958 Report 2
+10011895	D007081	Barkasan Occurrence	molybdenum (molybdenite)	9.96734	44.75109	n/s	Hunt 1958 Report 2
+10011896	D007082	Abderesach Occurrence	barite; lead (galena)	11.35052	49.951	limestone	Usoni 1952

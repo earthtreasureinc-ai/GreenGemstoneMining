@@ -4,7 +4,7 @@ const IMG = '/assets/images';
 
 export const SITE = {
   name: 'Green Gemstone Mining Company',
-  email: 'greengemstonemining@gmail.com',
+  email: 'greengemstoneminingcompany@gmail.com',
   linkedin: '' as string, // TODO(owner): add the real LinkedIn company URL; the link is hidden while empty.
 };
 
