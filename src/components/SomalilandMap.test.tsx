@@ -116,12 +116,17 @@ describe('SomalilandMap', () => {
       return c;
     };
     let near = 0;
-    for (const l of LOCALITIES.filter((x) => x.precision === 'point' && x.region && !x.outside)) {
+    for (const l of LOCALITIES.filter((x) => x.precision === 'point' && x.region && !x.outside && !x.company)) {
       const key = REGIONS.find((r) => r.id === l.region)!.key;
       const pt = project(l.lon!, l.lat!);
       if (!rings(MAP_REGIONS[key].d).some((ring) => inside(pt, ring))) near++; // coast islands and polygon slivers are assigned to the nearest region
     }
     expect(near).toBeLessThan(25);
+    // company sites follow the Master File's region; the generalised map puts four of them just across the Awdal/Sahil line, so they only need to sit inside the country
+    for (const l of LOCALITIES.filter((x) => x.company)) {
+      const pt = project(l.lon!, l.lat!);
+      expect(Object.values(MAP_REGIONS).some((r) => rings(r.d).some((ring) => inside(pt, ring))), `${l.name} should be inside Somaliland`).toBe(true);
+    }
   });
 
   it('lists every place tantalum is recorded and highlights it when the visitor picks it', () => {
@@ -131,5 +136,15 @@ describe('SomalilandMap', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /^Tantalum/ })[0]);
     expect(screen.getByText(/Tantalum · \d+ records/)).toBeTruthy();
     expect(screen.getAllByText(/Manja Vihin Magiaian/).length).toBeGreaterThan(0);
+  });
+
+  it('shows company project areas on demand and labels company records with their evidence', () => {
+    render(<SomalilandMap />);
+    expect(document.querySelector('.gm-projects')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Company project areas' }));
+    expect(document.querySelectorAll('.gm-projects .proj-mark').length).toBe(14);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Copper/ })[0]);
+    expect(screen.getAllByText('Observed in the field').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Company field record/).length).toBeGreaterThan(0);
   });
 });

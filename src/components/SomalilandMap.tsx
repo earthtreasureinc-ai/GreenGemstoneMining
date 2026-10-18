@@ -4,6 +4,7 @@ import { MAP_CORRIDOR, MAP_GEOLOGY, MAP_OUTLINE, MAP_PLACES, MAP_REGIONS, MAP_VI
 import { EVIDENCE, OCCURRENCES, SOURCES } from '@/data/geology';
 import { KM100, project, unproject } from '@/data/geoProject';
 import { REGIONS } from '@/data/site';
+import { PROJECTS } from '@/data/company';
 import { LOCALITIES, MINERAL_COUNT, MINERAL_GROUP, mineralsInRegion, recordsFor } from '@/data/minerals';
 import { FINDER, mineralName } from '@/data/mineralText';
 import { useI18n } from '@/i18n/core';
@@ -43,6 +44,7 @@ export default function SomalilandMap() {
   const [layer, setLayer] = useState<Layer>('regions');
   const [selected, setSelected] = useState<string>('awdal');
   const [occ, setOcc] = useState<string | null>('borama');
+  const [showProjects, setShowProjects] = useState(false);
   const [mineral, setMineral] = useState<string | null>(null);
   const [loc, setLoc] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -100,6 +102,7 @@ export default function SomalilandMap() {
               </button>
             ))}
           </div>
+          <button type="button" className="geomap-projects" aria-pressed={showProjects} onClick={() => setShowProjects((v) => !v)}>{F.projects}</button>
         </div>
 
         <div className="geomap-frame">
@@ -246,6 +249,21 @@ export default function SomalilandMap() {
                 <text x="9" y="4" className="place-label">{p.places[pl.name] ?? pl.name}</text>
               </g>
             ))}
+
+            {showProjects && (
+              <g className="gm-projects">
+                {PROJECTS.map((pr) => {
+                  const [x, y] = project(pr.lon, pr.lat);
+                  return (
+                    <g key={pr.id} transform={`translate(${x} ${y})`}>
+                      <path d="M0 -9L8 0L0 9L-8 0Z" className={`proj-mark ${pr.port ? 'is-port' : ''}`} />
+                      {(pr.priority === 1 || pr.port || pr.id === 'darimile') && <text x="11" y="4" className="proj-label">{pr.name}</text>}
+                      <title>{pr.name}{pr.priority ? ` · ${F.priority(pr.priority)}` : ''}{pr.port ? ` · ${F.port}` : ''}</title>
+                    </g>
+                  );
+                })}
+              </g>
+            )}
 
             {/* every USGS-recorded site, bright when it holds the chosen mineral */}
             <g className="gm-pins">
@@ -432,13 +450,16 @@ export default function SomalilandMap() {
                       {l.precision === 'point' ? `${fmt(l.lon!, l.lat!)} · ${F.point}` : l.precision === 'district' ? F.district : F.reported}
                       {l.outside && ` · ${F.outside}`}
                       {l.basis && ` · ${F.basis[l.basis]}`}
+                      {l.company && ` · ${F.company}`}
                     </span>
+                    {l.evidence && <span className={`ev-badge eb-${l.evidence}`}>{F.evidence[l.evidence]}</span>}
                     <span className="fr-src">{F.source}: {l.link ? <a href={l.link} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{l.source}</a> : l.source}</span>
                   </button>
                 </li>
               ))}
             </ul>
             <p className="finder-note">{F.precisionNote}</p>
+            {results.some((r) => r.company) && <p className="finder-note">{F.evidenceNote}</p>}
           </div>
         )}
       </section>
