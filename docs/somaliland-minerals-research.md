@@ -90,3 +90,9 @@ Searched BGS colonial survey records, a 2013 overview paper on Somalia's mineral
 - Corrections: the Darkainle marker moved to 43.28E 10.40N (Awdal) and Dalan to 48.82E 11.08N (Sanaag), as the USGS records give.
 - Tantalum: no mapped site inside the six regions. Recorded at Manja Vihin Magiaian (tin-tantalum, border zone) and as region-level reports (Awdal, Sahil, Sanaag). Exact positions are not published.
 - Zinc and nickel are no longer listed for Awdal (zinc stays as a base-metal listing; nickel is not) because no source in these notes places nickel there; nickel stays in Maroodi Jeex (Arabsiyo anomalies).
+
+## Round 4: company project areas and field records (Master File v0.2)
+- Added `src/data/company.ts`: the 11 Awdal project areas, the Lughaya port site and the Darimile (Gabiley) tungsten prospect, each finding tagged observed, reported, unverified, inferred or confirmed as in the Master File. Positions are the average of each area's sample points.
+- Company records appear in the mineral finder beside the USGS records, with their evidence badge and a note that they are not assays or resource estimates and do not imply a licence.
+- The Master File places all areas except Darimile in Awdal. The generalised map polygons put Bacado, Alihayd, Gargara and Garbo-Teeb just across the Awdal/Sahil line, so the data follows the Master File and the map note covers the approximation.
+- Left out on purpose: lithium, platinum-group metals, tantalum from the lab (not measured), the "diamond" claim, gold as a product, revenue figures and anything about licences.

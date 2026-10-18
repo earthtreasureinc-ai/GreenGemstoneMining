@@ -3,6 +3,7 @@
  * the research notes (docs/somaliland-minerals-research.md) and carry no coordinates, so they highlight a region but get no pin.
  */
 import { MRDS } from './mineralsMrds';
+import { PROJECTS, SOURCE_COMPANY, type Evidence } from './company';
 
 export type Group = 'gems' | 'metals' | 'industrial' | 'energy';
 export type Precision = 'point' | 'district' | 'reported';
@@ -14,7 +15,7 @@ export interface MrdsRow {
 }
 export interface Locality {
   id: string; name?: string; region: string | null; precision: Precision; lon?: number; lat?: number; minerals: string[];
-  basis?: Basis; source: string; link?: string; outside?: boolean;
+  basis?: Basis; source: string; link?: string; outside?: boolean; evidence?: Evidence; company?: boolean;
 }
 
 /** id -> group. Names live in mineralText.ts. */
@@ -71,7 +72,11 @@ const MRDS_LOC: Locality[] = MRDS.map((r) => ({
   link: `https://mineralresourcemap.com/detail/${r.dep}`, outside: r.outside,
 }));
 
-export const LOCALITIES: Locality[] = [...MRDS_LOC, ...DISTRICT];
+const COMPANY_LOC: Locality[] = PROJECTS.flatMap((p) =>
+  p.findings.map((fd) => ({ id: `c-${p.id}-${fd.mineral}`, name: p.name, region: p.region, precision: 'point' as const, lon: p.lon, lat: p.lat, minerals: [fd.mineral], source: SOURCE_COMPANY, evidence: fd.evidence, company: true })),
+);
+
+export const LOCALITIES: Locality[] = [...MRDS_LOC, ...COMPANY_LOC, ...DISTRICT];
 
 /** Localities that record a mineral, points first. */
 export const recordsFor = (mineral: string): Locality[] =>

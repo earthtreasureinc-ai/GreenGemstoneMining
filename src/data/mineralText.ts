@@ -27,6 +27,7 @@ export const KNOWN_MINERALS = Object.keys(N);
 type UI = {
   title: string; hint: string; clear: string; pick: string; records: (n: number) => string; point: string; district: string; reported: string; outside: string;
   basis: Record<string, string>; precisionNote: string; source: string; none: string; selected: string; unknownSite: string; typeOf: Record<string, string>;
+  evidence: Record<string, string>; company: string; projects: string; priority: (n: number) => string; evidenceNote: string; port: string;
 };
 const mk = (u: Omit<UI, 'typeOf'> & { types: [string, string, string, string] }): UI => ({ ...u, typeOf: { occurrence: u.types[0], prospect: u.types[1], mine: u.types[2], spring: u.types[3] } });
 export const FINDER: Record<Lang, UI> = {
@@ -36,6 +37,7 @@ export const FINDER: Record<Lang, UI> = {
     outside: 'Recorded outside the six regions shown (border zone or neighbouring region), so it is not pinned',
     basis: { survey: 'Published survey', gov: 'Government listing', trade: 'Gemstone trade', anomaly: 'Unconfirmed anomaly', estimate: 'Surface estimate, not a resource', unverified: 'Unverified report' },
     precisionNote: 'Mapped sites were transcribed by USGS from 1950s and 1960s colonial survey maps and rounded to about 2 km. They need field checking.', source: 'Source', none: 'No record for this mineral yet.', selected: 'Selected', unknownSite: 'Unnamed',
+    evidence: { observed: 'Observed in the field', reported: 'Reported by local miners', unverified: 'Unverified, no test', inferred: 'Geologist\'s inference', confirmed: 'Confirmed by lab' }, company: 'Company field record', projects: 'Company project areas', priority: (n) => `Priority ${n}`, port: 'Port site', evidenceNote: 'Company field records come from a reconnaissance survey in 2017 and a 2024 prospect survey. They show where to sample next. They are not assays, grades or resource estimates, and they do not mean an area is licensed.',
     types: ['Occurrence', 'Prospect', 'Mine', 'Hot spring'],
   }),
   so: mk({
@@ -44,6 +46,7 @@ export const FINDER: Record<Lang, UI> = {
     outside: 'Waxaa laga diiwaangeliyay banaanka lixda gobol ee la muujiyay (aagga xadka ama gobol deriska ah), sidaas darteed lama calaamadin',
     basis: { survey: 'Sahan la daabacay', gov: 'Liis dawladeed', trade: 'Ganacsiga dhagaxyada qaaliga ah', anomaly: 'Calaamad aan la xaqiijin', estimate: 'Qiyaas dusha ah, ma aha kheyraad', unverified: 'Warbixin aan la xaqiijin' },
     precisionNote: 'Goobaha khariidadda waxaa USGS ka qoray khariidado sahan oo gumeysi (1950-1960) lagana soo xigtay qiyaas ahaan 2 km. Waxay u baahan yihiin hubin goobta.', source: 'Il', none: 'Weli ma jiro diiwaan macdantan ah.', selected: 'La doortay', unknownSite: 'Magac la\'aan',
+    evidence: { observed: 'La arkay goobta', reported: 'Laga sheegay macdan-qodayaasha', unverified: 'Aan la xaqiijin, tijaabo la\'aan', inferred: 'Fikirka juqraafiga', confirmed: 'Lab ayaa xaqiijiyay' }, company: 'Diiwaan goob ee shirkadda', projects: 'Goobaha mashruuca shirkadda', priority: (n) => `Mudnaan ${n}`, port: 'Goobta dekedda', evidenceNote: 'Diiwaannada goobta shirkadda waxay ka yimaadeen sahan hordhac ah oo 2017 ah iyo sahan 2024. Waxay tusaan meesha xigta ee la qaadayo muunad. Ma aha tijaabo, qiimo ama qiyaas kheyraad, mana muujinaan in goobtu shatiyaysan tahay.',
     types: ['Muuqaal', 'Goob raadin', 'Miino', 'Ceel kulul'],
   }),
   ar: mk({
@@ -52,6 +55,7 @@ export const FINDER: Record<Lang, UI> = {
     outside: 'سُجّل خارج المناطق الست المعروضة (منطقة حدودية أو منطقة مجاورة)، لذلك لم يُثبَّت على الخريطة',
     basis: { survey: 'مسح منشور', gov: 'قائمة حكومية', trade: 'تجارة الأحجار الكريمة', anomaly: 'شذوذ غير مؤكد', estimate: 'تقدير سطحي وليس مورداً', unverified: 'تقرير غير مؤكد' },
     precisionNote: 'نقلت USGS المواقع المرسومة من خرائط مسح استعمارية (الخمسينيات والستينيات) وقُرّبت إلى نحو 2 كم، وتحتاج إلى تحقق ميداني.', source: 'المصدر', none: 'لا يوجد سجل لهذا المعدن بعد.', selected: 'محدد', unknownSite: 'بلا اسم',
+    evidence: { observed: 'شوهد في الميدان', reported: 'أفاد به عمال المناجم المحليون', unverified: 'غير مؤكد، بلا فحص', inferred: 'استنتاج الجيولوجي', confirmed: 'مؤكد مخبرياً' }, company: 'سجل ميداني للشركة', projects: 'مناطق مشاريع الشركة', priority: (n) => `الأولوية ${n}`, port: 'موقع الميناء', evidenceNote: 'السجلات الميدانية للشركة مصدرها مسح استطلاعي عام 2017 ومسح لموقع عام 2024، وهي تدل على أماكن أخذ العينات التالية، وليست تحاليل أو عيارات أو تقديرات موارد، ولا تعني أن المنطقة مرخصة.',
     types: ['ظهور', 'موقع استكشاف', 'منجم', 'ينبوع حار'],
   }),
   zh: mk({
@@ -60,6 +64,7 @@ export const FINDER: Record<Lang, UI> = {
     outside: '记录位于所示六个地区之外（边境地带或邻近地区），因此不在地图上标点',
     basis: { survey: '已发表的调查', gov: '政府名录', trade: '宝石贸易', anomaly: '未证实的异常', estimate: '地表估算，非资源量', unverified: '未经证实的报道' },
     precisionNote: '已标注地点由美国地质调查局（USGS）根据 20 世纪 50、60 年代殖民地调查图转录，并取整到约 2 公里，需要现场核实。', source: '来源', none: '该矿物暂无记录。', selected: '已选择', unknownSite: '未命名',
+    evidence: { observed: '现场观察到', reported: '当地矿工口述', unverified: '未证实，无检测', inferred: '地质师推断', confirmed: '实验室确认' }, company: '公司野外记录', projects: '公司项目区', priority: (n) => `优先级 ${n}`, port: '港口选址', evidenceNote: '公司野外记录来自 2017 年的踏勘和 2024 年的矿点调查，用于指示下一步采样位置，不是化验结果、品位或资源量估算，也不代表该区已获得许可。',
     types: ['矿点', '勘探区', '矿山', '温泉'],
   }),
 };
