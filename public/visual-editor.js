@@ -17,6 +17,8 @@
   document.body.classList.add('ggmc-ve-loaded');
   const style = document.createElement('style');
   style.textContent = `
+    body.ggmc-ve-loaded #root, body.ggmc-ve-loaded #root * { visibility: visible !important; animation-delay: 0s !important; animation-duration: 0s !important; transition-delay: 0s !important; }
+    body.ggmc-ve-loaded #root * { opacity: 1 !important; }
     body.ggmc-ve-loaded .reveal, body.ggmc-ve-loaded .reveal.in { opacity: 1 !important; transform: none !important; visibility: visible !important; }
     body.ggmc-ve-loaded .hero-kicker, body.ggmc-ve-loaded .hero-sub, body.ggmc-ve-loaded .hero-metrics, body.ggmc-ve-loaded .hero-foot, body.ggmc-ve-loaded .hero-cta { opacity: 1 !important; animation: none !important; transform: none !important; }
     body.ggmc-ve-active [data-ggmc-edit-key][contenteditable="true"] { outline: 1px dashed #c4a252 !important; outline-offset: 3px; cursor: text !important; border-radius: 2px; }
