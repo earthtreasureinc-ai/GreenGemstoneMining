@@ -9,7 +9,7 @@
   const blank = () => ({ text: {}, styles: {}, hidden: {}, blocks: [] });
   const copy = (v) => JSON.parse(JSON.stringify(v));
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
-  let panel, inspector, status, counter, textStart = null;
+  let panel, inspector, status, counter, layers, textStart = null;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (saved && typeof saved === 'object') draft = { ...blank(), ...saved };
@@ -51,7 +51,7 @@
   const say = (text) => { if (status) status.textContent = text; };
   const updateCount = () => { if (counter) counter.textContent = Object.keys(draft.text).length+' text edits · '+Object.keys(draft.styles).length+' styled elements · '+draft.blocks.length+' added blocks · local draft'; };
   const saveHistory = () => { undo.push(copy(draft)); if (undo.length>60) undo.shift(); redo=[]; };
-  const applyChange = (message) => { persist(); refresh(); if(selected) inspect(selected); say(message||'Saved locally. This is not published.'); };
+  const applyChange = (message) => { persist(); refresh(); renderLayers(); if(selected) inspect(selected); say(message||'Saved locally. This is not published.'); };
   const safeUrl = (value) => { try { const u=new URL(value,location.origin); return ['https:','http:','mailto:'].includes(u.protocol)||String(value).startsWith('#')?value:'#'; } catch { return String(value).startsWith('#')?value:'#'; } };
   const makeBlock = (item) => {
     const el=document.createElement(item.kind==='section'?'section':'article');
@@ -163,7 +163,39 @@
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(payload).then(()=>say('Editor change package copied. Paste it into this chat for review.')).catch(fallback);else fallback();
   }
   function resetDraft(){if(!confirm('Clear all editor drafts in this browser? This does not change the website.'))return;saveHistory();draft=blank();persist();location.reload();}
-  function buildPanel(){
+  function renderLayers(){
+    if(!layers)return;
+    layers.replaceChildren();
+    const heading=document.createElement('div');heading.className='ve-label';heading.textContent='Layers / components';layers.append(heading);
+    const help=document.createElement('p');help.className='ve-note';help.textContent='Select a layer to inspect it. Added blocks can be dragged to reorder.';layers.append(help);
+    const list=document.createElement('div');list.style.cssText='display:grid;gap:5px';layers.append(list);
+    const nodes=[...root.querySelectorAll('section,article,header,footer,main,h1,h2,h3,img,a,button')].filter(el=>!el.closest('#'+ID)&&!el.closest('[data-ve-block-id]'));
+    const seen=new Set();
+    nodes.slice(0,100).forEach(el=>{
+      const key=path(el);if(!key||seen.has(key))return;seen.add(key);
+      const row=document.createElement('button');
+      row.textContent=(el.tagName.toLowerCase())+(el.id?' #'+el.id:'')+' — '+(el.getAttribute('aria-label')||el.getAttribute('alt')||(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,32));
+      row.style.cssText='text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;font-weight:500';
+      row.addEventListener('click',()=>{setMode('select');selectElement(el);});list.append(row);
+    });
+    draft.blocks.forEach(block=>{
+      const el=root.querySelector('[data-ve-block-id="'+block.id+'"]');
+      const row=document.createElement('button');row.textContent='▦ '+(block.kind||'block')+' — '+(block.title||'Untitled');row.draggable=true;row.style.cssText='text-align:left;width:100%;border-style:dashed';
+      row.addEventListener('click',()=>{if(el)selectElement(el);});
+      row.addEventListener('dragstart',e=>{e.dataTransfer?.setData('text/ggmc-block',block.id);if(e.dataTransfer)e.dataTransfer.effectAllowed='move';});
+      row.addEventListener('dragover',e=>e.preventDefault());
+      row.addEventListener('drop',e=>{
+        e.preventDefault();const moving=e.dataTransfer?.getData('text/ggmc-block');
+        const from=draft.blocks.findIndex(b=>b.id===moving),to=draft.blocks.findIndex(b=>b.id===block.id);
+        if(from<0||to<0||from===to)return;
+        saveHistory();const [item]=draft.blocks.splice(from,1);draft.blocks.splice(to,0,item);
+        const ordered=draft.blocks.map(b=>root.querySelector('[data-ve-block-id="'+b.id+'"]')).filter(Boolean);
+        ordered.forEach(n=>n.parentElement?.append(n));persist();refresh();renderLayers();say('Block order saved in this browser draft.');
+      });
+      list.append(row);
+    });
+  }
+    function buildPanel(){
     panel=document.createElement('aside');panel.id=ID;panel.setAttribute('aria-label','Preview editor studio');
     const h=document.createElement('h2');h.className='ve-title';h.textContent='Preview editor studio';
     const note=document.createElement('p');note.className='ve-note';note.textContent='Edit text (including white text), style elements, add content, and preview device widths. Drafts remain in this browser until reviewed and applied to the preview branch.';
@@ -183,6 +215,7 @@
     tools.append(exp,reset,close);panel.append(tools);
     const label=document.createElement('div');label.className='ve-label';label.textContent='Inspector';panel.append(label);
     inspector=document.createElement('div');panel.append(inspector);
+    const layerSection=document.createElement('div');panel.append(layerSection);layers=layerSection;renderLayers();
     const responsive=document.createElement('div');responsive.className='ve-label';responsive.textContent='Responsive preview';panel.append(responsive);
     const devices=document.createElement('div');devices.className='ve-row';
     [['Desktop','100%'],['Tablet','768px'],['Mobile','390px']].forEach(([label,width])=>{const b=document.createElement('button');b.textContent=label;b.addEventListener('click',()=>{root.style.maxWidth=width==='100%'?'':width;root.style.marginInline=width==='100%'?'':'auto';root.style.boxShadow=width==='100%'?'':'0 0 0 2px #c4a252';say('Local preview width: '+label+'.');});devices.append(b);});panel.append(devices);
@@ -191,8 +224,8 @@
     document.body.append(panel);updateCount();inspect(null);
   }
   function setMode(next){mode=next;document.body.classList.toggle('ggmc-ve-text',mode==='text');document.body.classList.toggle('ggmc-ve-select',mode==='select');panel.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));refresh();say(mode==='text'?'Click outlined text and type. Your edits save locally.':'Click an element on the page to change its styling, visibility, or position.');}
-  function doUndo(){if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();if(selected)inspect(selected);say('Undid the previous change.');}
-  function doRedo(){if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();if(selected)inspect(selected);say('Restored the next change.');}
+  function doUndo(){if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();renderLayers();if(selected)inspect(selected);say('Undid the previous change.');}
+  function doRedo(){if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();renderLayers();if(selected)inspect(selected);say('Restored the next change.');}
   document.addEventListener('focusin',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.isContentEditable&&el.dataset.veKey)textStart=copy(draft);});
   document.addEventListener('focusout',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.dataset.veKey&&textStart){if(JSON.stringify(textStart)!==JSON.stringify(draft)){undo.push(textStart);if(undo.length>60)undo.shift();redo=[];}textStart=null;}});
   document.addEventListener('input',e=>{const el=e.target;if(!(el instanceof HTMLElement)||!el.isContentEditable||!el.dataset.veKey)return;const key=el.dataset.veKey;const prev=draft.text[key];draft.text[key]={before:prev?prev.before:(el.dataset.veOriginal||''),after:el.textContent||''};persist();say('Text draft saved in this browser.');});
