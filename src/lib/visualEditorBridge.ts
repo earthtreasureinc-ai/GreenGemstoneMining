@@ -21,12 +21,13 @@ export interface VisualEditorBridge {
 }
 declare global { interface Window { __GGMC_EDITOR_API__?:VisualEditorBridge } }
 
-const expectedPreviewRef = import.meta.env.VITE_VISUAL_EDITOR_SUPABASE_REF;
-const previewEditorEnabled = import.meta.env.VITE_VISUAL_EDITOR_ENABLED === 'true';
 function isDedicatedPreviewProject(): boolean {
- if (!previewEditorEnabled || !expectedPreviewRef || !import.meta.env.VITE_SUPABASE_URL) return false;
+ const expectedPreviewRef = import.meta.env.VITE_VISUAL_EDITOR_SUPABASE_REF;
+ const previewEditorEnabled = import.meta.env.VITE_VISUAL_EDITOR_ENABLED === 'true';
+ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+ if (!previewEditorEnabled || !expectedPreviewRef || !supabaseUrl) return false;
  try {
-  const actualRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
+  const actualRef = new URL(supabaseUrl).hostname.split('.')[0];
   const host = window.location.hostname;
   return actualRef === expectedPreviewRef && (host.endsWith('.vercel.app') || host === 'localhost');
  } catch { return false; }
