@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ArrowRight } from 'lucide-react';
 
 const mineralInterests = [
   'Gold', 'Mica muscovite', 'Lithium', 'Copper', 'Tin', 'Tungsten',
