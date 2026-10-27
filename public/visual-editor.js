@@ -58,12 +58,33 @@
     }
     return parts.join(' > ');
   }
+  function wrapTextNodes() {
+    const root = document.getElementById('root');
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!(node.textContent || '').trim()) return NodeFilter.FILTER_REJECT;
+        const parent = node.parentElement;
+        if (!parent || parent.closest(`#${TOOLBAR_ID}, script, style, svg, path, input, textarea, select, [aria-hidden=\"true\"], [data-ggmc-text-wrap=\"true\"]`)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const span = document.createElement('span');
+      span.dataset.ggmcTextWrap = 'true';
+      node.parentNode.replaceChild(span, node);
+      span.appendChild(node);
+    }
+  }
   function eligible(el) {
     if (el.childElementCount !== 0 || ignoredTags.has(el.tagName)) return false;
-    if (el.closest(`#${TOOLBAR_ID}, script, style, svg, input, textarea, select, [aria-hidden="true"]`)) return false;
+    if (el.closest(`#${TOOLBAR_ID}, script, style, svg, input, textarea, select, [aria-hidden=\"true\"]`)) return false;
     return Boolean((el.textContent || '').trim());
   }
   function refreshElements() {
+    wrapTextNodes();
     const elements = Array.from(document.body.querySelectorAll('*')).filter(eligible);
     for (const el of elements) {
       const key = getPath(el);
@@ -89,7 +110,7 @@
     const button = toolbar && toolbar.querySelector('[data-action="toggle"]');
     if (button) button.textContent = editing ? 'Finish editing' : 'Edit text on page';
     refreshElements();
-    setStatus(editing ? 'Click any outlined text and type. Your draft saves in this browser.' : 'Draft only — nothing has been published or changed on the live website.');
+    setStatus(editing ? 'Click any outlined text (including white text) and type. Your draft saves in this browser.' : 'Draft only — nothing has been published or changed on the live website.');
   }
   function exportChanges() {
     const edits = Object.entries(draft).map(([selector, value]) => ({ selector, original: value.before, revised: value.after }));
@@ -110,7 +131,7 @@
     toolbar = document.createElement('aside');
     toolbar.id = TOOLBAR_ID;
     toolbar.setAttribute('aria-label', 'Preview visual editor');
-    toolbar.innerHTML = `<p class="ggmc-ve-title">Preview editor</p><p class="ggmc-ve-note">Edit the real page visually. Changes stay in this browser until you export them.</p><div class="ggmc-ve-actions"><button class="primary" data-action="toggle">Edit text on page</button><button data-action="export">Copy changes for ChatGPT</button><button data-action="reset">Reset draft</button><button data-action="close">Close editor</button></div><div class="ggmc-ve-status" data-role="status" aria-live="polite"></div><div class="ggmc-ve-status" data-role="count"></div>`;
+    toolbar.innerHTML = `<p class="ggmc-ve-title">Preview editor</p><p class="ggmc-ve-note">Edit visible text, including white text and text beside icons. Drafts stay in this browser until you copy them to ChatGPT for a branch update.</p><div class="ggmc-ve-actions"><button class="primary" data-action="toggle">Edit text on page</button><button data-action="export">Copy changes for ChatGPT</button><button data-action="reset">Reset draft</button><button data-action="close">Close editor</button></div><div class="ggmc-ve-status" data-role="status" aria-live="polite"></div><div class="ggmc-ve-status" data-role="count"></div>`;
     document.body.appendChild(toolbar);
     status = toolbar.querySelector('[data-role="status"]');
     count = toolbar.querySelector('[data-role="count"]');
