@@ -152,7 +152,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Rural development &amp; community support</p>
             <h2 className="display">Beyond the mine.<br /><em>Supporting rural life.</em></h2>
-            <p className="body-text">Green Gemstone Mining Company's rural-development work is broader than mining-site development. It includes helping communities in rural areas during mining projects and geological surveying, as well as community and humanitarian support during difficult periods.</p>
+            <p className="body-text">Rural development is one of the company's stated service areas. Green Gemstone Mining Company's work is broader than mining-site development: it includes helping communities during mining projects and geological surveying, improving access to water and roads, and providing community and humanitarian support during difficult periods.</p>
           </div>
           <div className="content-grid">
             <Card label="Water &amp; access" title="Water wells and rural roads">
@@ -184,7 +184,7 @@ export default function CompanyContent() {
             <Card label="Listed service" title="Mineral identification"><p>Mineral identification is listed among the company's service areas.</p></Card>
             <Card label="Listed service" title="Mineral processing"><p>Mineral processing is listed among the company's service areas.</p></Card>
             <Card label="Listed service" title="Agriculture"><p>Agriculture is one of the company's stated service and development interests.</p></Card>
-            <Card label="Listed service" title="Rural development"><p>Rural development is one of the company's stated service and development interests.</p></Card>
+            <article className="content-card"><span className="content-label">Listed service</span><h3>Rural development</h3><p>Explore the company's rural-development and community-support work, including water access, rural roads, humanitarian assistance and mosque restoration.</p><a className="link-go" href="#rural-development">Rural development &amp; community support <ArrowRight size={15} /></a></article>
             <Card label="Listed service" title="Fishing"><p>Fishing is one of the company's stated service and development interests.</p></Card>
             <Card label="Research initiative" title="Seaweed information gathering"><p>The company has begun gathering information about seaweed and is exploring wild collection and ocean farming as future possibilities. These are research and planning activities, not represented here as established operations.</p></Card>
           </div>
