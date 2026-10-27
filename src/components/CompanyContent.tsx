@@ -70,7 +70,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Mineral portfolio</p>
             <h2 className="display">Metals and mineral<br /><em>interests.</em></h2>
-            <p className="body-text">These are mineral interests named in the company website and Canva source material. The list describes areas of interest, not independently verified reserves or a statement that every material is currently being mined.</p>
+            <p className="body-text">These are mineral interests identified as areas of company interest. The list describes areas of interest, not independently verified reserves or a statement that every material is currently being mined. The list describes areas of interest, not independently verified reserves or a statement that every material is currently being mined.</p>
           </div>
           <div className="content-pill-list">{mineralInterests.map((name) => <span className="content-pill" key={name}>{name}</span>)}</div>
           <div className="content-note">Resource descriptions and geological occurrences should be assessed against project-specific technical information. The presence of a mineral in this catalogue is not a reserve estimate or a guarantee of commercial viability.</div>
@@ -82,7 +82,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Gemstones</p>
             <h2 className="display light">A broad gemstone<br /><em>portfolio.</em></h2>
-            <p className="body-text">The Canva source lists the following gemstone types among the company's areas of interest.</p>
+            <p className="body-text">The company's gemstone interests include the following types.</p>
           </div>
           <div className="content-grid">
             {gemstoneInterests.map((name, i) => <article className="content-card gemstone-card" key={name}><span className="content-label">Gemstone {String(i + 1).padStart(2, '0')}</span><h3>{name}</h3><p>Listed in the company's source material as a gemstone of interest.</p></article>)}
@@ -178,14 +178,14 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Services &amp; initiatives</p>
             <h2 className="display">Beyond extraction.<br /><em>Local development.</em></h2>
-            <p className="body-text">The Canva material also names service areas and community-development interests. These are shown as areas listed in the source, not as a claim that every service is currently active.</p>
+            <p className="body-text">The company's service areas and community-development interests include the following. These are not a claim that every service is currently active.</p>
           </div>
           <div className="content-grid">
             <Card label="Listed service" title="Mineral identification"><p>Mineral identification is listed among the company's service areas.</p></Card>
             <Card label="Listed service" title="Mineral processing"><p>Mineral processing is listed among the company's service areas.</p></Card>
-            <Card label="Listed service" title="Agriculture"><p>Agriculture is listed as a service or development area in the Canva material.</p></Card>
-            <Card label="Listed service" title="Rural development"><p>Rural development is listed as a service or development area in the Canva material.</p></Card>
-            <Card label="Listed service" title="Fishing"><p>Fishing is listed as a service or development area in the Canva material.</p></Card>
+            <Card label="Listed service" title="Agriculture"><p>Agriculture is one of the company's stated service and development interests.</p></Card>
+            <Card label="Listed service" title="Rural development"><p>Rural development is one of the company's stated service and development interests.</p></Card>
+            <Card label="Listed service" title="Fishing"><p>Fishing is one of the company's stated service and development interests.</p></Card>
             <Card label="Research initiative" title="Seaweed information gathering"><p>The company has begun gathering information about seaweed and is exploring wild collection and ocean farming as future possibilities. These are research and planning activities, not represented here as established operations.</p></Card>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Company history</p>
             <h2 className="display light">Built through fieldwork<br /><em>and persistence.</em></h2>
-            <p className="body-text">The company history supplied in Canva describes an early personal investment, geological fieldwork, mining and exploration activity, and a continued effort to attract development funding.</p>
+            <p className="body-text">The company's history includes an early personal investment, geological fieldwork, mining and exploration activity, and a continued effort to attract development funding.</p>
           </div>
           <div className="content-grid">
             <Card label="Early effort" title="Initial investment"><p>The source describes an initial investment of personal life savings and the engagement of the company's first geologist.</p></Card>
