@@ -9,7 +9,8 @@
   const blank = () => ({ text: {}, styles: {}, hidden: {}, blocks: [] });
   const copy = (v) => JSON.parse(JSON.stringify(v));
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
-  let panel, inspector, status, counter, layers, textStart = null;\n  let serverDraftId=null,serverVersion=0,serverDraftStatus='draft';
+  let panel, inspector, status, counter, layers, textStart = null;
+  let serverDraftId=null,serverVersion=0,serverDraftStatus='draft';
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (saved && typeof saved === 'object') draft = { ...blank(), ...saved };
