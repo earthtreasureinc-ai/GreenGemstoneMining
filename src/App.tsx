@@ -57,7 +57,8 @@ export default function App() {
           <div className="nav-menu-item">
             <a href="#projects" onClick={() => setMenuOpen(false)}>{t.nav.projects}</a>
             <details className="nav-dropdown"><summary aria-label="Open projects submenu"><ChevronDown size={13} /></summary><div className="nav-dropdown-panel">
-              <a href="#development-projects" onClick={() => setMenuOpen(false)}>Development projects</a>
+              <a href="#development-projects" onClick={() => setMenuOpen(false)}>Mining development</a>
+              <a href="#rural-development" onClick={() => setMenuOpen(false)}>Rural development &amp; community support</a>
               <a href="#operations" onClick={() => setMenuOpen(false)}>Operations &amp; equipment</a>
             </div></details>
           </div>
