@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { LanguageProvider } from './i18n/LanguageProvider';
+import { installVisualEditorBridge } from './lib/visualEditorBridge';
+
+installVisualEditorBridge();
 
 class PreviewRenderErrorBoundary extends Component<
   { children: ReactNode },
