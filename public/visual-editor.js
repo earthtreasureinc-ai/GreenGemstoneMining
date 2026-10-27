@@ -9,7 +9,7 @@
   const blank = () => ({ text: {}, styles: {}, hidden: {}, blocks: [] });
   const copy = (v) => JSON.parse(JSON.stringify(v));
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
-  let panel, inspector, status, counter;
+  let panel, inspector, status, counter, textStart = null;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (saved && typeof saved === 'object') draft = { ...blank(), ...saved };
@@ -193,6 +193,8 @@
   function setMode(next){mode=next;document.body.classList.toggle('ggmc-ve-text',mode==='text');document.body.classList.toggle('ggmc-ve-select',mode==='select');panel.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));refresh();say(mode==='text'?'Click outlined text and type. Your edits save locally.':'Click an element on the page to change its styling, visibility, or position.');}
   function doUndo(){if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();if(selected)inspect(selected);say('Undid the previous change.');}
   function doRedo(){if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();if(selected)inspect(selected);say('Restored the next change.');}
+  document.addEventListener('focusin',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.isContentEditable&&el.dataset.veKey)textStart=copy(draft);});
+  document.addEventListener('focusout',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.dataset.veKey&&textStart){if(JSON.stringify(textStart)!==JSON.stringify(draft)){undo.push(textStart);if(undo.length>60)undo.shift();redo=[];}textStart=null;}});
   document.addEventListener('input',e=>{const el=e.target;if(!(el instanceof HTMLElement)||!el.isContentEditable||!el.dataset.veKey)return;const key=el.dataset.veKey;const prev=draft.text[key];draft.text[key]={before:prev?prev.before:(el.dataset.veOriginal||''),after:el.textContent||''};persist();say('Text draft saved in this browser.');});
   document.addEventListener('click',e=>{if(!panel||panel.contains(e.target))return;if(mode==='select'){const el=e.target instanceof Element?e.target.closest('#root *'):null;if(el&&!el.closest('#'+ID)){e.preventDefault();e.stopPropagation();selectElement(el);}}else if(mode==='text'){const el=e.target instanceof Element?e.target.closest('[data-ve-key][contenteditable="true"]'):null;if(el&&el.closest('a'))e.preventDefault();}},true);
   document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){e.preventDefault();doRedo();}if(e.key==='Escape'&&mode==='select')setMode('text');});
