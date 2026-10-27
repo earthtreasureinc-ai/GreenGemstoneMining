@@ -129,21 +129,47 @@ export default function CompanyContent() {
       <section id="development-projects" className="sec sec-dark">
         <div className="sec-container">
           <div className="content-intro reveal in">
-            <p className="eyebrow center">Projects</p>
-            <h2 className="display light">Development-ready<br /><em>opportunities.</em></h2>
-            <p className="body-text">The company reports more than six excavation-ready development mining projects and says additional funding is needed to service its contracts and advance development. Project-specific technical data and status should be requested directly from the company.</p>
+            <p className="eyebrow center">Mining projects</p>
+            <h2 className="display light">Mining development<br /><em>opportunities.</em></h2>
+            <p className="body-text">The company reports more than six excavation-ready mining projects and says additional funding is needed to service its contracts and advance them. This section covers mining opportunities; the company's wider rural-development and community-support work is described separately below.</p>
           </div>
           <div className="content-grid">
-            <Card label="Development" title="More than six projects">
-              <p>Company-reported development opportunities across its mining portfolio. Project names, locations, licences, and technical status are not fully specified in the source content reviewed here.</p>
+            <Card label="Mining development" title="More than six projects">
+              <p>Company-reported opportunities across the mining portfolio. Project names, licences and technical status are not fully specified in the source content reviewed here.</p>
             </Card>
-            <Card label="Partnerships" title="Investor and technical partners">
+            <Card label="Partnerships" title="Investment and technical partners">
               <p>The company is seeking investment, joint-venture partners, mineral offtake relationships, and technical or operating support.</p>
             </Card>
             <Card label="Regional focus" title="Across Somaliland">
               <p>Company materials identify Awdal, Maroodi Jeex, Sahil (also written Saaxil), Togdheer, Sanaag and Sool as regions of interest.</p>
             </Card>
           </div>
+        </div>
+      </section>
+
+      <section id="rural-development" className="sec">
+        <div className="sec-container">
+          <div className="content-intro reveal in">
+            <p className="eyebrow center">Rural development &amp; community support</p>
+            <h2 className="display">Beyond the mine.<br /><em>Supporting rural life.</em></h2>
+            <p className="body-text">Green Gemstone Mining Company's rural-development work is broader than mining-site development. It includes helping communities in rural areas during mining projects and geological surveying, as well as community and humanitarian support during difficult periods.</p>
+          </div>
+          <div className="content-grid">
+            <Card label="Water &amp; access" title="Water wells and rural roads">
+              <p>Community support can include helping rural communities access water and digging wells where local water sources are insufficient. The company also reports road construction connected with its mining projects:</p>
+              <ul>
+                <li><strong>Emerald project:</strong> approximately 2 km of road built.</li>
+                <li><strong>Telluride project:</strong> approximately 3 km of road built.</li>
+              </ul>
+            </Card>
+            <Card label="Humanitarian support" title="Help during famine and hardship">
+              <p>The company describes helping rural communities during difficult times, including famine and water shortages, and helping families relocate during famine seasons when conditions require it.</p>
+            </Card>
+            <Card label="Community &amp; faith" title="Rural mosque restoration">
+              <p>Community initiatives can include restoring rural mosques, providing prayer rugs and Quran books, supporting solar-panel installations, and helping with the hiring of additional religious teachers.</p>
+            </Card>
+          </div>
+          <div className="content-note">The road lengths above are specific examples supplied by the company. Other activities describe the types of community support undertaken or supported; dates, locations and individual project records have not yet been supplied for publication.</div>
         </div>
       </section>
 
