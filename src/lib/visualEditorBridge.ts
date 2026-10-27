@@ -20,23 +20,38 @@ export interface VisualEditorBridge {
  getPublishedPayload():Promise<Record<string,unknown>|null>;
 }
 declare global { interface Window { __GGMC_EDITOR_API__?:VisualEditorBridge } }
+
+const expectedPreviewRef = import.meta.env.VITE_VISUAL_EDITOR_SUPABASE_REF;
+const previewEditorEnabled = import.meta.env.VITE_VISUAL_EDITOR_ENABLED === 'true';
+function isDedicatedPreviewProject(): boolean {
+ if (!previewEditorEnabled || !expectedPreviewRef || !import.meta.env.VITE_SUPABASE_URL) return false;
+ try {
+  const actualRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
+  const host = window.location.hostname;
+  return actualRef === expectedPreviewRef && (host.endsWith('.vercel.app') || host === 'localhost');
+ } catch { return false; }
+}
+async function getPreviewSupabase() {
+ if (!isDedicatedPreviewProject()) return null;
+ return getSupabase();
+}
 async function adminClient(){
- const sb=await getSupabase(); if(!sb)throw new Error('Preview Supabase is not configured for this deployment.');
+ const sb=await getPreviewSupabase(); if(!sb)throw new Error('Visual editor is disabled until a dedicated preview Supabase project is configured.');
  const {data:{session}}=await sb.auth.getSession(); if(!session)throw new Error('Sign in with your owner account first.');
  const {data,error}=await sb.rpc('is_admin'); if(error||data!==true)throw new Error('This account is not authorised to manage the website.');
  return sb;
 }
 export function installVisualEditorBridge(){
  window.__GGMC_EDITOR_API__={
-  async getSession(){const sb=await getSupabase();if(!sb)return {email:null,isAdmin:false};const {data:{session}}=await sb.auth.getSession();if(!session)return {email:null,isAdmin:false};const {data}=await sb.rpc('is_admin');return {email:session.user.email??null,isAdmin:data===true};},
-  async signIn(email,password){const sb=await getSupabase();if(!sb)throw new Error('Preview Supabase is not configured for this deployment.');const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw new Error('Sign-in failed. Check your credentials.');const {data}=await sb.rpc('is_admin');if(data!==true){await sb.auth.signOut();throw new Error('This account is not authorised to manage the website.');}},
-  async signOut(){const sb=await getSupabase();await sb?.auth.signOut();},
+  async getSession(){const sb=await getPreviewSupabase();if(!sb)return {email:null,isAdmin:false};const {data:{session}}=await sb.auth.getSession();if(!session)return {email:null,isAdmin:false};const {data}=await sb.rpc('is_admin');return {email:session.user.email??null,isAdmin:data===true};},
+  async signIn(email,password){const sb=await getPreviewSupabase();if(!sb)throw new Error('Visual editor is disabled until a dedicated preview Supabase project is configured.');const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw new Error('Sign-in failed. Check your credentials.');const {data}=await sb.rpc('is_admin');if(data!==true){await sb.auth.signOut();throw new Error('This account is not authorised to manage the website.');}},
+  async signOut(){const sb=await getPreviewSupabase();await sb?.auth.signOut();},
   async listDrafts(){const sb=await adminClient();const {data,error}=await sb.rpc('list_visual_editor_drafts');if(error)throw error;return (data??[]) as VisualEditorServerDraft[];},
   async saveDraft(input){const sb=await adminClient();const {data,error}=await sb.rpc('save_visual_editor_draft',{p_draft_id:input.id,p_expected_version:input.expectedVersion,p_name:input.name,p_payload:input.payload});if(error)throw error;return data as VisualEditorServerDraft;},
   async publishDraft(id,expectedVersion){const sb=await adminClient();const {data,error}=await sb.rpc('publish_visual_editor_draft',{p_draft_id:id,p_expected_version:expectedVersion});if(error)throw error;return data as VisualEditorServerDraft;},
   async listVersions(id){const sb=await adminClient();const {data,error}=await sb.rpc('list_visual_editor_versions',{p_draft_id:id});if(error)throw error;return (data??[]) as VisualEditorServerVersion[];},
   async restoreVersion(id,version){const sb=await adminClient();const {data,error}=await sb.rpc('restore_visual_editor_version',{p_draft_id:id,p_version:version});if(error)throw error;return data as VisualEditorServerDraft;},
-  async getPublishedPayload(){const sb=await getSupabase();if(!sb)return null;const {data,error}=await sb.rpc('get_published_visual_editor_payload');if(error)throw error;return (data??null) as Record<string,unknown>|null;}
+  async getPublishedPayload(){const sb=await getPreviewSupabase();if(!sb)return null;const {data,error}=await sb.rpc('get_published_visual_editor_payload');if(error)throw error;return (data??null) as Record<string,unknown>|null;}
  };
 }
 
