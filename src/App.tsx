@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState } from 'react';
 import { Atom, ArrowRight, ArrowUpRight, ChevronDown, Gem, Hammer, Linkedin, Mail, MapPin, Menu, Mountain, X } from 'lucide-react';
 import Gallery from '@/components/Gallery';
+import CompanyContent from '@/components/CompanyContent';
 import ContactForm from '@/components/ContactForm';
 import SomalilandMap from '@/components/SomalilandMap';
 import { Counter, Crystal3D, ScrollProgress } from '@/components/Effects';
@@ -15,15 +16,6 @@ import { supabaseConfigured } from '@/lib/supabase';
 
 const DEPOSIT_ICONS = { gem: Gem, atom: Atom, hammer: Hammer, mountain: Mountain } as const;
 const METALS = MINERALS.filter((m) => m.cat === 'Metal' || m.cat === 'Precious');
-
-const NAV_LINKS = [
-  ['overview', '#top'],
-  ['company', '#company'],
-  ['portfolio', '#resources'],
-  ['projects', '#projects'],
-  ['gallery', '#gallery'],
-  ['contact', '#contact'],
-] as const;
 
 const MediaPanel = lazy(() => import('@/components/MediaPanel'));
 
@@ -44,9 +36,33 @@ export default function App() {
       <header className={`hdr ${scrolled || menuOpen ? 'scrolled' : ''}`}>
         <a className="hdr-brand" href="#top"><Gem size={22} aria-hidden="true" /><span>Green Gemstone Mining Company</span></a>
         <nav id="main-nav" className={`hdr-nav ${menuOpen ? 'open' : ''}`} aria-label={t.ui.mainNav}>
-          {NAV_LINKS.map(([key, href]) => (
-            <a key={href} href={href} onClick={() => setMenuOpen(false)}>{t.nav[key]}</a>
-          ))}
+          <a href="#top" onClick={() => setMenuOpen(false)}>{t.nav.overview}</a>
+          <div className="nav-menu-item">
+            <a href="#company" onClick={() => setMenuOpen(false)}>{t.nav.company}</a>
+            <details className="nav-dropdown"><summary aria-label="Open company submenu"><ChevronDown size={13} /></summary><div className="nav-dropdown-panel">
+              <a href="#company-profile" onClick={() => setMenuOpen(false)}>Company profile</a>
+              <a href="#vision-mission" onClick={() => setMenuOpen(false)}>Vision &amp; mission</a>
+              <a href="#leadership" onClick={() => setMenuOpen(false)}>Leadership</a>
+              <a href="#history-details" onClick={() => setMenuOpen(false)}>Company history</a>
+            </div></details>
+          </div>
+          <div className="nav-menu-item">
+            <a href="#resources" onClick={() => setMenuOpen(false)}>{t.nav.portfolio}</a>
+            <details className="nav-dropdown"><summary aria-label="Open portfolio submenu"><ChevronDown size={13} /></summary><div className="nav-dropdown-panel">
+              <a href="#gemstones" onClick={() => setMenuOpen(false)}>Gemstones</a>
+              <a href="#industrial-metals" onClick={() => setMenuOpen(false)}>Industrial &amp; precious metals</a>
+              <a href="#services" onClick={() => setMenuOpen(false)}>Services</a>
+            </div></details>
+          </div>
+          <div className="nav-menu-item">
+            <a href="#projects" onClick={() => setMenuOpen(false)}>{t.nav.projects}</a>
+            <details className="nav-dropdown"><summary aria-label="Open projects submenu"><ChevronDown size={13} /></summary><div className="nav-dropdown-panel">
+              <a href="#development-projects" onClick={() => setMenuOpen(false)}>Development projects</a>
+              <a href="#operations" onClick={() => setMenuOpen(false)}>Operations &amp; equipment</a>
+            </div></details>
+          </div>
+          <a href="#gallery" onClick={() => setMenuOpen(false)}>{t.nav.gallery}</a>
+          <a href="#contact" onClick={() => setMenuOpen(false)}>{t.nav.contact}</a>
           <LanguageSwitcher />
           <a className="hdr-cta" href="#contact" onClick={() => setMenuOpen(false)}>{t.nav.cta} <ArrowUpRight size={14} aria-hidden="true" /></a>
         </nav>
@@ -200,6 +216,8 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        <CompanyContent />
 
         <section id="gallery" className="sec sec-dark">
           <div className="sec-container">
