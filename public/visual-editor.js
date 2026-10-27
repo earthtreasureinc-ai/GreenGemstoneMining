@@ -78,8 +78,13 @@
     if(applying)return; applying=true;
     try {
       draft.blocks.forEach((block) => {
-        if(!root.querySelector('[data-ve-block-id="'+block.id+'"]')) {
-          const el=makeBlock(block);
+        let el=root.querySelector('[data-ve-block-id="'+block.id+'"]');
+        const stamp=JSON.stringify(block);
+        if(el&&el.dataset.veRenderStamp!==stamp){
+          const replacement=makeBlock(block);replacement.dataset.veRenderStamp=stamp;el.replaceWith(replacement);el=replacement;
+        }
+        if(!el){
+          el=makeBlock(block);el.dataset.veRenderStamp=stamp;
           const previous=[...draft.blocks.slice(0,draft.blocks.indexOf(block))].reverse().find(b=>b.after===block.after&&root.querySelector('[data-ve-block-id="'+b.id+'"]'));
           const previousEl=previous&&root.querySelector('[data-ve-block-id="'+previous.id+'"]');
           const target=block.after?all(block.after)[0]:null;
