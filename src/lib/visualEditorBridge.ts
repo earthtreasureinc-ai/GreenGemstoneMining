@@ -38,13 +38,13 @@ async function getPreviewSupabase() {
 async function adminClient(){
  const sb=await getPreviewSupabase(); if(!sb)throw new Error('Visual editor is disabled until a dedicated preview Supabase project is configured.');
  const {data:{session}}=await sb.auth.getSession(); if(!session)throw new Error('Sign in with your owner account first.');
- const {data,error}=await sb.rpc('is_admin'); if(error||data!==true)throw new Error('This account is not authorised to manage the website.');
+ const {data,error}=await sb.rpc('is_visual_editor_admin'); if(error||data!==true)throw new Error('This account is not authorised to manage the website.');
  return sb;
 }
 export function installVisualEditorBridge(){
  window.__GGMC_EDITOR_API__={
-  async getSession(){const sb=await getPreviewSupabase();if(!sb)return {email:null,isAdmin:false};const {data:{session}}=await sb.auth.getSession();if(!session)return {email:null,isAdmin:false};const {data}=await sb.rpc('is_admin');return {email:session.user.email??null,isAdmin:data===true};},
-  async signIn(email,password){const sb=await getPreviewSupabase();if(!sb)throw new Error('Visual editor is disabled until a dedicated preview Supabase project is configured.');const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw new Error('Sign-in failed. Check your credentials.');const {data}=await sb.rpc('is_admin');if(data!==true){await sb.auth.signOut();throw new Error('This account is not authorised to manage the website.');}},
+  async getSession(){const sb=await getPreviewSupabase();if(!sb)return {email:null,isAdmin:false};const {data:{session}}=await sb.auth.getSession();if(!session)return {email:null,isAdmin:false};const {data}=await sb.rpc('is_visual_editor_admin');return {email:session.user.email??null,isAdmin:data===true};},
+  async signIn(email,password){const sb=await getPreviewSupabase();if(!sb)throw new Error('Visual editor is disabled until a dedicated preview Supabase project is configured.');const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw new Error('Sign-in failed. Check your credentials.');const {data}=await sb.rpc('is_visual_editor_admin');if(data!==true){await sb.auth.signOut();throw new Error('This account is not authorised to manage the website.');}},
   async signOut(){const sb=await getPreviewSupabase();await sb?.auth.signOut();},
   async listDrafts(){const sb=await adminClient();const {data,error}=await sb.rpc('list_visual_editor_drafts');if(error)throw error;return (data??[]) as VisualEditorServerDraft[];},
   async saveDraft(input){const sb=await adminClient();const {data,error}=await sb.rpc('save_visual_editor_draft',{p_draft_id:input.id,p_expected_version:input.expectedVersion,p_name:input.name,p_payload:input.payload});if(error)throw error;return data as VisualEditorServerDraft;},
