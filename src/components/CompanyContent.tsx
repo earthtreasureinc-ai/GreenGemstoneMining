@@ -1,4 +1,4 @@
-import { ArrowUpRight, Gem, Mountain, ShieldCheck, Truck } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 const mineralInterests = [
   'Gold', 'Mica muscovite', 'Lithium', 'Copper', 'Tin', 'Tungsten',
@@ -11,7 +11,7 @@ const gemstoneInterests = [
   'Serendibite', 'Spinel', 'Opal', 'Topaz', 'Tourmaline',
 ];
 
-function Card({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
+function Card({ label, title, children }: { label: string; title: string; children: ReactNode }) {
   return <article className="content-card"><span className="content-label">{label}</span><h3>{title}</h3>{children}</article>;
 }
 
