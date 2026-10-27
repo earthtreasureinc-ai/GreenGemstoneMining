@@ -63,7 +63,7 @@ begin
  if not found then raise exception 'draft not found' using errcode='P0002'; end if;
  if r.version<>p_expected_version then raise exception 'version conflict' using errcode='40001'; end if;
  if r.status='published' then return r; end if;
- update public.visual_editor_drafts set status='published',published_at=now(),updated_at=now(),updated_by=u where id=p_draft_id returning * into r;
+ update public.visual_editor_drafts set status='published',version=r.version+1,published_at=now(),updated_at=now(),updated_by=u where id=p_draft_id returning * into r;
  insert into public.visual_editor_versions(draft_id,version,payload,status,actor_id,note) values(r.id,r.version,r.payload,'published',u,'Published snapshot');
  return r;
 end; $$;
