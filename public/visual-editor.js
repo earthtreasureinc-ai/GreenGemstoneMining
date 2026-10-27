@@ -79,8 +79,13 @@
     try {
       draft.blocks.forEach((block) => {
         if(!root.querySelector('[data-ve-block-id="'+block.id+'"]')) {
-          const el=makeBlock(block); const target=block.after?all(block.after)[0]:null;
-          if(target&&target.parentElement)target.insertAdjacentElement('afterend',el);else (root.querySelector('main')||root).append(el);
+          const el=makeBlock(block);
+          const previous=[...draft.blocks.slice(0,draft.blocks.indexOf(block))].reverse().find(b=>b.after===block.after&&root.querySelector('[data-ve-block-id="'+b.id+'"]'));
+          const previousEl=previous&&root.querySelector('[data-ve-block-id="'+previous.id+'"]');
+          const target=block.after?all(block.after)[0]:null;
+          if(previousEl&&previousEl.parentElement)previousEl.insertAdjacentElement('afterend',el);
+          else if(target&&target.parentElement)target.insertAdjacentElement('afterend',el);
+          else (root.querySelector('main')||root).append(el);
         }
       });
       const textNodes=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
@@ -117,6 +122,32 @@
     const title=document.createElement('div');title.className='ve-label';title.textContent='Selected: '+el.tagName.toLowerCase()+(el.id?' #'+el.id:'');inspector.append(title);
     const key=path(el),props=draft.styles[key]||{};
     const current=(p)=>props[p]||el.style.getPropertyValue(p)||getComputedStyle(el).getPropertyValue(p);
+    if(el.dataset.veBlockId){
+      const item=draft.blocks.find(b=>b.id===el.dataset.veBlockId);
+      if(item){
+        const titleField=input('text',item.title,'Block title');
+        titleField.addEventListener('change',()=>{saveHistory();item.title=titleField.value;applyChange('Block title updated.');});
+        inspector.append(field('Block title',titleField));
+        if(['section','text','card'].includes(item.kind)){
+          const body=document.createElement('textarea');body.value=item.text||'';
+          body.addEventListener('change',()=>{saveHistory();item.text=body.value;applyChange('Block text updated.');});
+          inspector.append(field('Block text',body));
+        }
+        if(item.kind==='image'){
+          const src=input('url',item.src,'HTTPS image URL or /path');
+          src.addEventListener('change',()=>{if(!/^https:\/\//i.test(src.value)&&!src.value.startsWith('/'))return say('Use HTTPS or a site-relative image path.');saveHistory();item.src=src.value;applyChange('Image source updated.');});
+          inspector.append(field('Image URL',src));
+          const alt=input('text',item.alt,'Accessible description');
+          alt.addEventListener('change',()=>{saveHistory();item.alt=alt.value;applyChange('Image alt text updated.');});
+          inspector.append(field('Image alt text',alt));
+        }
+        if(item.kind==='link'){
+          const href=input('url',item.href,'https://… or #section');
+          href.addEventListener('change',()=>{saveHistory();item.href=safeUrl(href.value);applyChange('Link destination updated.');});
+          inspector.append(field('Link destination',href));
+        }
+      }
+    }
     const color=input('color',toHex(current('color')));color.addEventListener('change',()=>changeStyle('color',color.value));inspector.append(field('Text color',color));
     const bg=input('color',toHex(current('background-color')));bg.addEventListener('change',()=>changeStyle('background-color',bg.value));inspector.append(field('Background',bg));
     const size=input('text',current('font-size'),'e.g. 24px');size.addEventListener('change',()=>changeStyle('font-size',cssLength(size.value)));inspector.append(field('Font size',size));
