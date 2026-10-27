@@ -1,9 +1,9 @@
-import { Component, StrictMode, type ErrorInfo, type ReactNode } from 'react';
+import { Component, StrictMode, useEffect, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { LanguageProvider } from './i18n/LanguageProvider';
-import { installVisualEditorBridge } from './lib/visualEditorBridge';
+import { applyPublishedVisualEditorPayload, installVisualEditorBridge } from './lib/visualEditorBridge';
 
 installVisualEditorBridge();
 
@@ -74,11 +74,25 @@ class PreviewRenderErrorBoundary extends Component<
   }
 }
 
+function PublishedEditorContent() {
+  useEffect(() => {
+    let cancelled = false;
+    void window.__GGMC_EDITOR_API__?.getPublishedPayload().then((payload) => {
+      if (!cancelled) applyPublishedVisualEditorPayload(payload);
+    }).catch((error: unknown) => {
+      console.warn('[Published editor content unavailable]', error);
+    });
+    return () => { cancelled = true; };
+  }, []);
+  return null;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <PreviewRenderErrorBoundary>
       <LanguageProvider>
         <App />
+        <PublishedEditorContent />
       </LanguageProvider>
     </PreviewRenderErrorBoundary>
   </StrictMode>
