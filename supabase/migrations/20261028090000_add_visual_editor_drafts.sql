@@ -1,5 +1,24 @@
 -- Preview-only visual editor schema. Apply ONLY to a dedicated preview Supabase project.
 -- Never apply this migration to the production Green Gemstone project.
+
+-- A separate allowlist is required because this project must not rely on the
+-- production project's public.admin_users table or authorization function.
+create table if not exists public.visual_editor_admins (
+ user_id uuid primary key references auth.users(id) on delete cascade,
+ created_at timestamptz not null default now()
+);
+alter table public.visual_editor_admins enable row level security;
+revoke all on public.visual_editor_admins from anon, authenticated;
+
+create or replace function public.is_visual_editor_admin()
+returns boolean language sql stable security definer set search_path = pg_catalog, public as $
+ select exists (
+   select 1 from public.visual_editor_admins where user_id = auth.uid()
+ );
+$;
+revoke all on function public.is_visual_editor_admin() from public, anon, authenticated;
+grant execute on function public.is_visual_editor_admin() to authenticated;
+
 create table if not exists public.visual_editor_drafts (
  id uuid primary key default gen_random_uuid(),
  project_key text not null default 'green-gemstone-mining-preview'
@@ -42,12 +61,12 @@ grant select on public.visual_editor_drafts, public.visual_editor_versions to au
 drop policy if exists admins_read_editor_drafts on public.visual_editor_drafts;
 create policy admins_read_editor_drafts on public.visual_editor_drafts
  for select to authenticated using (
-   public.is_admin() and project_key = 'green-gemstone-mining-preview'
+   public.is_visual_editor_admin() and project_key = 'green-gemstone-mining-preview'
  );
 drop policy if exists admins_read_editor_versions on public.visual_editor_versions;
 create policy admins_read_editor_versions on public.visual_editor_versions
  for select to authenticated using (
-   public.is_admin() and project_key = 'green-gemstone-mining-preview'
+   public.is_visual_editor_admin() and project_key = 'green-gemstone-mining-preview'
  );
 
 create or replace function public.reject_visual_editor_version_mutation()
@@ -67,7 +86,7 @@ create or replace function public.save_visual_editor_draft(
 language plpgsql security definer set search_path = pg_catalog, public as $$
 declare u uuid := auth.uid(); r public.visual_editor_drafts;
 begin
- if u is null or not public.is_admin() then raise exception 'not authorized' using errcode = '42501'; end if;
+ if u is null or not public.is_visual_editor_admin() then raise exception 'not authorized' using errcode = '42501'; end if;
  if p_payload is null or jsonb_typeof(p_payload) <> 'object' or pg_column_size(p_payload) > 1048576 then raise exception 'invalid payload' using errcode = '22023'; end if;
  if p_name is null or char_length(trim(p_name)) < 1 or char_length(p_name) > 120 then raise exception 'invalid draft name' using errcode = '22023'; end if;
  if p_draft_id is null then
@@ -96,7 +115,7 @@ returns public.visual_editor_drafts
 language plpgsql security definer set search_path = pg_catalog, public as $$
 declare u uuid := auth.uid(); r public.visual_editor_drafts;
 begin
- if u is null or not public.is_admin() then raise exception 'not authorized' using errcode='42501'; end if;
+ if u is null or not public.is_visual_editor_admin() then raise exception 'not authorized' using errcode='42501'; end if;
  select * into r from public.visual_editor_drafts
   where id=p_draft_id and project_key='green-gemstone-mining-preview' for update;
  if not found then raise exception 'preview draft not found' using errcode='P0002'; end if;
@@ -114,7 +133,7 @@ create or replace function public.list_visual_editor_drafts()
 returns setof public.visual_editor_drafts
 language plpgsql security definer set search_path = pg_catalog, public as $$
 begin
- if auth.uid() is null or not public.is_admin() then raise exception 'not authorized' using errcode='42501'; end if;
+ if auth.uid() is null or not public.is_visual_editor_admin() then raise exception 'not authorized' using errcode='42501'; end if;
  return query select * from public.visual_editor_drafts
   where project_key='green-gemstone-mining-preview' and status<>'archived'
   order by updated_at desc limit 50;
@@ -125,7 +144,7 @@ create or replace function public.list_visual_editor_versions(p_draft_id uuid)
 returns setof public.visual_editor_versions
 language plpgsql security definer set search_path = pg_catalog, public as $$
 begin
- if auth.uid() is null or not public.is_admin() then raise exception 'not authorized' using errcode='42501'; end if;
+ if auth.uid() is null or not public.is_visual_editor_admin() then raise exception 'not authorized' using errcode='42501'; end if;
  if not exists(select 1 from public.visual_editor_drafts where id=p_draft_id and project_key='green-gemstone-mining-preview')
  then raise exception 'preview draft not found' using errcode='P0002'; end if;
  return query select * from public.visual_editor_versions
@@ -140,7 +159,7 @@ returns public.visual_editor_drafts
 language plpgsql security definer set search_path = pg_catalog, public as $$
 declare u uuid := auth.uid(); src public.visual_editor_drafts; v public.visual_editor_versions; r public.visual_editor_drafts;
 begin
- if u is null or not public.is_admin() then raise exception 'not authorized' using errcode='42501'; end if;
+ if u is null or not public.is_visual_editor_admin() then raise exception 'not authorized' using errcode='42501'; end if;
  select * into src from public.visual_editor_drafts where id=p_draft_id and project_key='green-gemstone-mining-preview';
  if not found then raise exception 'preview draft not found' using errcode='P0002'; end if;
  select * into v from public.visual_editor_versions
