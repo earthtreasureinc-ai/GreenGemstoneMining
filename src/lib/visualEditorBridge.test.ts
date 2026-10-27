@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach,describe,expect,it,vi } from 'vitest';
 const mocks=vi.hoisted(()=>({getSession:vi.fn(),signInWithPassword:vi.fn(),signOut:vi.fn(),rpc:vi.fn()}));
 vi.mock('@/lib/supabase',()=>({getSupabase:vi.fn(async()=>({auth:{getSession:mocks.getSession,signInWithPassword:mocks.signInWithPassword,signOut:mocks.signOut},rpc:mocks.rpc}))}));
