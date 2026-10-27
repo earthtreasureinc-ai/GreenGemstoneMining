@@ -14,8 +14,11 @@
 
   try { draft = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { draft = {}; }
 
+  document.body.classList.add('ggmc-ve-loaded');
   const style = document.createElement('style');
   style.textContent = `
+    body.ggmc-ve-loaded .reveal, body.ggmc-ve-loaded .reveal.in { opacity: 1 !important; transform: none !important; visibility: visible !important; }
+    body.ggmc-ve-loaded .hero-kicker, body.ggmc-ve-loaded .hero-sub, body.ggmc-ve-loaded .hero-metrics, body.ggmc-ve-loaded .hero-foot, body.ggmc-ve-loaded .hero-cta { opacity: 1 !important; animation: none !important; transform: none !important; }
     body.ggmc-ve-active [data-ggmc-edit-key][contenteditable="true"] { outline: 1px dashed #c4a252 !important; outline-offset: 3px; cursor: text !important; border-radius: 2px; }
     body.ggmc-ve-active [data-ggmc-edit-key][contenteditable="true"]:focus { outline: 2px solid #e4c87c !important; background: rgba(196,162,82,.09); }
     #${TOOLBAR_ID} { position: fixed; z-index: 2147483647; right: 18px; bottom: 18px; width: min(360px, calc(100vw - 28px)); padding: 16px; box-sizing: border-box; color: #f2eee4; background: #0d1310; border: 1px solid #7a5f2c; border-radius: 12px; box-shadow: 0 14px 48px rgba(0,0,0,.42); font: 14px/1.4 'Space Grotesk', sans-serif; }
