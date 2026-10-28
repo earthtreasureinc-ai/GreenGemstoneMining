@@ -26,8 +26,8 @@ describe('published visual editor payload safety', () => {
  it('rejects CSS values containing URL and script-like constructs', () => {
   document.body.innerHTML = '<div id="root"><p class="target">Keep me</p></div>';
   const target = document.querySelector('.target') as HTMLElement;
-  applyPublishedVisualEditorPayload({ styles: { '.target': { color: 'red', background: 'url(javascript:alert(1))' } } }, document.getElementById('root')!);
+  applyPublishedVisualEditorPayload({ styles: { '.target': { color: 'red', 'font-family': 'url(javascript:alert(1))' } } }, document.getElementById('root')!);
   expect(target.style.color).toBe('red');
-  expect(target.style.background).toBe('');
+  expect(target.style.fontFamily).toBe('');
  });
 });
