@@ -11,11 +11,11 @@ alter table public.visual_editor_admins enable row level security;
 revoke all on public.visual_editor_admins from anon, authenticated;
 
 create or replace function public.is_visual_editor_admin()
-returns boolean language sql stable security definer set search_path = pg_catalog, public as $
+returns boolean language sql stable security definer set search_path = pg_catalog, public as $$
  select exists (
    select 1 from public.visual_editor_admins where user_id = auth.uid()
  );
-$;
+$$;
 revoke all on function public.is_visual_editor_admin() from public, anon, authenticated;
 grant execute on function public.is_visual_editor_admin() to authenticated;
 
