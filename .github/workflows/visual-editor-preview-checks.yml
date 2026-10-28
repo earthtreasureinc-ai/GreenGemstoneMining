@@ -15,6 +15,20 @@ jobs:
   preview-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d migration_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Check out preview branch
         uses: actions/checkout@v4
@@ -25,6 +39,85 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Bootstrap disposable PostgreSQL auth stubs
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d migration_test -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users (id uuid PRIMARY KEY);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $
+            SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+          $;
+          INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000001');
+          INSERT INTO auth.users(id) VALUES ('00000000-0000-4000-8000-000000000002');
+          SQL
+      - name: Apply visual editor migration to disposable PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d migration_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261028090000_add_visual_editor_drafts.sql
+      - name: Smoke-test visual editor authorization, save, publish, restore, and immutability
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d migration_test -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO public.visual_editor_admins(user_id) VALUES ('00000000-0000-4000-8000-000000000001');
+          BEGIN;
+          SET ROLE authenticated;
+          SELECT set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', false);
+          DO $
+          DECLARE
+            draft public.visual_editor_drafts;
+            published public.visual_editor_drafts;
+            restored public.visual_editor_drafts;
+          BEGIN
+            draft := public.save_visual_editor_draft(NULL, 0, 'CI draft', '{"text":{}}'::jsonb);
+            IF draft.version <> 1 OR draft.status <> 'draft' THEN
+              RAISE EXCEPTION 'initial save returned unexpected draft state';
+            END IF;
+            BEGIN
+              PERFORM public.save_visual_editor_draft(draft.id, 0, 'Stale save', '{"text":{}}'::jsonb);
+              RAISE EXCEPTION 'stale version was unexpectedly accepted';
+            EXCEPTION WHEN SQLSTATE '40001' THEN
+              NULL;
+            END;
+            published := public.publish_visual_editor_draft(draft.id, draft.version);
+            IF published.status <> 'published' THEN
+              RAISE EXCEPTION 'publish did not return a published snapshot';
+            END IF;
+            restored := public.restore_visual_editor_version(draft.id, 1);
+            IF restored.id = draft.id OR restored.status <> 'draft' THEN
+              RAISE EXCEPTION 'restore did not create a new draft';
+            END IF;
+            IF public.get_published_visual_editor_payload() IS NULL THEN
+              RAISE EXCEPTION 'published payload reader returned NULL';
+            END IF;
+          END $;
+          SELECT set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000002', false);
+          DO $
+          BEGIN
+            BEGIN
+              PERFORM public.save_visual_editor_draft(NULL, 0, 'Unauthorized', '{"text":{}}'::jsonb);
+              RAISE EXCEPTION 'non-admin save was unexpectedly accepted';
+            EXCEPTION WHEN SQLSTATE '42501' THEN
+              NULL;
+            END;
+          END $;
+          COMMIT;
+          DO $
+          BEGIN
+            BEGIN
+              UPDATE public.visual_editor_versions SET note = 'tampered'
+              WHERE draft_id = (SELECT id FROM public.visual_editor_drafts WHERE name = 'CI draft')
+                AND version = 1;
+              RAISE EXCEPTION 'immutable history update was unexpectedly accepted';
+            EXCEPTION WHEN SQLSTATE '55000' THEN
+              NULL;
+            END;
+          END $;
+          SQL
       - name: Typecheck
         run: npm run typecheck
       - name: Unit tests
