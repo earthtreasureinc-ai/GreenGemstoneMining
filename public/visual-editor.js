@@ -107,7 +107,7 @@
         const text=draft.text[key];if(text&&typeof text.after==='string'&&el!==document.activeElement&&el.textContent!==text.after)el.textContent=text.after;
         el.contentEditable=mode==='text'?'true':'false';el.spellcheck=mode==='text';
       });
-      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>el.style.setProperty(prop,val))));
+      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>{if(prop==='--ve-image-src'&&el instanceof HTMLImageElement&&typeof val==='string'&&(val.startsWith('https://')||val.startsWith('/')))el.src=val;else if(prop==='--ve-image-alt'&&el instanceof HTMLImageElement&&typeof val==='string')el.alt=val;else if(prop==='--ve-link-href'&&el instanceof HTMLAnchorElement&&typeof val==='string')el.setAttribute('href',safeUrl(val));else if(!prop.startsWith('--ve-'))el.style.setProperty(prop,val);})));
       Object.entries(draft.hidden).forEach(([selector,hide])=>all(selector).forEach(el=>el.style.display=hide?'none':''));
       if(selected&&!document.contains(selected))selected=null;
       if(selected)selected.dataset.veSelected='true';
