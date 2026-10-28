@@ -365,6 +365,8 @@ test('panel buttons dock, collapse, expand, preview widths, export, and reset', 
   await page.getByRole('button', { name: size, exact: true }).click();
   await expect(page.locator('#root')).toHaveAttribute('data-ve-viewport', size);
  }
+ await expect.poll(() => page.locator('#root').evaluate(el => (el as HTMLElement).style.width)).toBe('90%');
+ await expect.poll(() => page.locator('#root').evaluate(el => (el as HTMLElement).style.boxShadow)).toContain('1px 2px 3px');
  await page.locator('#headline').fill('Reset me');
  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
  await page.getByRole('button', { name: 'Export JSON', exact: true }).click();
