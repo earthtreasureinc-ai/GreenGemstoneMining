@@ -84,7 +84,7 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
   try { root.querySelectorAll(selector).forEach((el) => Object.entries(props || {}).forEach(([key,value]) => {
    if (key === '--ve-image-src' && el instanceof HTMLImageElement && typeof value === 'string' && (value.startsWith('https://') || value.startsWith('/'))) el.src = value;
    else if (key === '--ve-image-alt' && el instanceof HTMLImageElement && typeof value === 'string' && value.length < 500) el.alt = value;
-   else if (key === '--ve-link-href' && el instanceof HTMLAnchorElement && typeof value === 'string') { let href = '#'; try { const u = new URL(value, location.origin); if (['https:', 'http:', 'mailto:'].includes(u.protocol) || value.startsWith('#')) href = value; } catch {} el.setAttribute('href', href); }
+   else if (key === '--ve-link-href' && el instanceof HTMLAnchorElement && typeof value === 'string') { let href = '#'; try { const u = new URL(value, location.origin); if (['https:', 'http:', 'mailto:'].includes(u.protocol) || value.startsWith('#')) href = value; } catch { /* unsafe or malformed URL */ } el.setAttribute('href', href); }
    else if (/^(color|background-color|font-size|font-family|font-weight|font-style|line-height|letter-spacing|text-align|text-decoration|text-transform|padding|padding-top|padding-right|padding-bottom|padding-left|margin|margin-top|margin-right|margin-bottom|margin-left|border|border-color|border-width|border-style|border-radius|box-shadow|width|min-width|max-width|height|min-height|max-height|opacity|display|position|top|right|bottom|left|gap|column-gap|row-gap|object-fit|object-position)$/.test(key) && safePublishedCssValue(value)) (el as HTMLElement).style.setProperty(key,value);
   })); } catch { /* stale selector */ }
  }
@@ -116,7 +116,7 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
   for (const [selector, action] of Object.entries(actions)) {
    if (!action || typeof action !== 'object') continue;
    if (!safePublishedSelector(selector)) continue;
-   let el: Element|null=null; try { el=root.querySelector(selector); } catch { continue; }
+   let el: Element|null; try { el=root.querySelector(selector); } catch { continue; }
    if (!el || el.closest('#ggmc-visual-editor')) continue;
    const items = Array.isArray(action.items) ? action.items : [];
    if (action.mode === 'text' && typeof action.text === 'string' && action.text) {
@@ -158,12 +158,12 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
    const img=document.createElement('img');img.src=block.src;img.alt=typeof block.alt==='string'?block.alt:'';img.loading='lazy';img.style.cssText='max-width:100%;height:auto';el.append(img);
   }
   if (kind === 'link' && typeof block.href === 'string') {
-   let href='#';try{const u=new URL(block.href,location.origin);if(['https:','http:','mailto:'].includes(u.protocol)||block.href.startsWith('#'))href=block.href;}catch{}
+   let href='#';try{const u=new URL(block.href,location.origin);if(['https:','http:','mailto:'].includes(u.protocol)||block.href.startsWith('#'))href=block.href;}catch{ /* unsafe or malformed URL */ }
    const a=document.createElement('a');a.href=href;a.textContent=typeof block.title==='string'&&block.title?block.title:'Learn more';el.append(a);
   }
   if (typeof block.text === 'string' && block.text) { const p=document.createElement('p');p.textContent=block.text;p.style.whiteSpace='pre-wrap';el.append(p); }
   const after = typeof block.after === 'string' ? block.after : '';
-  let target: Element|null=null;try{target=after?root.querySelector(after):null;}catch{}
+  let target: Element|null=null;try{target=after?root.querySelector(after):null;}catch{ /* stale selector */ }
   if (target?.parentElement) target.insertAdjacentElement('afterend',el); else main.append(el);
  }
 }
