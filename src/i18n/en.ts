@@ -3,7 +3,7 @@ const en = {
   meta: {
     title: 'Green Gemstone Mining Company | Somaliland',
     description:
-      'Green Gemstone Mining Company develops gemstone, rare earth and industrial metal opportunities in Somaliland with responsibility, discipline and lasting local value. Based in Hargeisa.',
+      'Green Gemstone Mining Company pursues gemstone, strategic-mineral and industrial-mineral opportunities in Somaliland. Public records and company field observations vary in age and evidence. Based in Hargeisa.',
   },
   ui: {
     skip: 'Skip to content',
@@ -18,7 +18,7 @@ const en = {
     kicker: "Somaliland's strategic minerals sector",
     h1a: "Somaliland's",
     h1b: 'mineral frontier',
-    sub: 'Green Gemstone Mining Company is building a diversified platform for responsible gemstone, rare earth, and industrial metal development across Somaliland, with a disciplined, investor-focused approach to long-term value creation.',
+    sub: 'Green Gemstone Mining Company pursues gemstone, strategic-mineral, and industrial-mineral opportunities across Somaliland. Public records and company field observations vary in age and evidence; project status is shared when substantiated. We welcome qualified investment and technical partners.',
     primary: 'Request investor information',
     secondary: 'Explore portfolio',
     foot: 'Mining responsibly to create lasting value',
@@ -46,13 +46,13 @@ const en = {
     eyebrow: "Somaliland's resource portfolio",
     h2a: 'A broader view',
     h2b: 'of what is possible.',
-    intro: '',
+    intro: 'This overview groups recorded gemstone, metal, and industrial-mineral occurrences. Evidence and project stages vary; this list does not establish a licence, commercial viability, or a mineral resource or reserve.',
     discuss: 'Discuss this focus',
     deposits: [
-      { name: 'Gemstone Deposits', tag: 'Precious', desc: 'Emeralds and high-value stones with a disciplined path from discovery to development.' },
-      { name: 'Rare Earth Deposits', tag: 'Strategic', desc: 'Strategic minerals positioned for the industries shaping a more connected future.' },
-      { name: 'Industrial Metal Deposits', tag: 'Industrial', desc: 'Copper, gold, lithium, tantalum, chromite and lead, diversified across Somaliland.' },
-      { name: 'Non-Metal Deposits', tag: 'Industrial', desc: 'Practical resources supporting construction, manufacturing, and regional growth.' },
+      { name: 'Gemstone occurrences', tag: 'Precious', desc: 'Published and company field records include emerald and other gemstones. Evidence and project stages vary.' },
+      { name: 'Strategic mineral records', tag: 'Strategic', desc: 'Historical and reported occurrences are shown with their evidence limits; they are not proof of an economic deposit.' },
+      { name: 'Metal occurrences', tag: 'Industrial', desc: 'Records include copper, gold, lithium, tantalum, chromite and lead. The evidence and project stage differ by location.' },
+      { name: 'Industrial mineral records', tag: 'Industrial', desc: 'Published sources record materials used in construction and industry; commercial viability has not been established here.' },
     ],
   },
   industrial: {
@@ -66,8 +66,8 @@ const en = {
   },
   mission: {
     eyebrow: 'Vision and mission',
-    h2a: 'Progress that',
-    h2b: "Securing tomorrow's supply chain.",
+    h2a: 'Progress that secures',
+    h2b: "tomorrow's supply chain.",
     text: 'To define the future of mining in Somaliland by matching world-class resource potential with exceptional operational integrity. We expand regional opportunities through disciplined growth, strict environmental stewardship, and enduring economic foundations.',
     points: [
       { t: 'Operational Intelligence', d: 'Combining regional expertise with disciplined fieldwork to define what is truly achievable on the ground.' },
@@ -79,7 +79,7 @@ const en = {
     eyebrow: "Somaliland's regions",
     h2a: 'Know the ground',
     h2b: 'Where data meets discovery.',
-    text: "Somaliland's six primary regions represent an exceptional geological variance, transitioning from the prolific Precambrian crystalline basement shield in the west to deep sedimentary marine successions in the east. Access the portal to explore recorded data compiled from our private exploration archives, official geological records, and primary mineral trading analytics.",
+    text: "Explore a generalized overview of Somaliland's six regions and the minerals recorded in published geological sources and company field records. Select a region or marker to see evidence details and source links.",
     mapTitle: 'SOMALILAND · GEOLOGICAL SCAN',
     mapLabel: 'Interactive geological map of Somaliland showing its six regions, rock types and recorded mineral occurrences. Select a region or marker for details.',
     layersLabel: 'Map layer',
@@ -102,7 +102,7 @@ const en = {
     cta: 'Enquire about this region',
     coords: 'Pointer',
     scale: '100 km',
-    note: 'This public portal provides a generalized macro-orientation of regional geology and public historical baselines. To safeguard our proprietary competitive advantage, the advanced structural mapping, modern drilling data, and comprehensive resource models contained within our private archives are strictly omitted from this public view. Definitive technical data rooms, project statuses, and verified resource estimates are accessible exclusively to qualified institutional partners upon formal request.',
+    note: 'This map is for general orientation. Region boundaries, geology and marker positions are approximate. Mineral occurrences come from the cited published sources and company field records where indicated; records vary in age and evidence. An occurrence is not proof of an economic deposit or a mineral resource or reserve estimate. This map does not show licence boundaries or current legal status. Project-specific material should be reviewed and approved before it is shared.',
     zones: {
       guban: { name: 'Guban coastal plain', desc: 'Hot, low coastal plain of recent sediments along the Gulf of Aden.' },
       basement: { name: 'Crystalline basement', desc: 'Ancient Precambrian rocks, the main host setting for gemstones and rare metals.' },
