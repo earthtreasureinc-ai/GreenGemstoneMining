@@ -14,7 +14,7 @@ permissions:
 jobs:
   preview-checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:16
@@ -123,5 +123,11 @@ jobs:
         run: npm run typecheck
       - name: Unit tests
         run: npm test
+      - name: Install browser test runner
+        run: npm install --no-save --package-lock=false @playwright/test
+      - name: Install Chromium for browser regression tests
+        run: npx playwright install --with-deps chromium
+      - name: Browser-level visual editor regression tests
+        run: npx playwright test
       - name: Production build
         run: npm run build
