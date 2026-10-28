@@ -128,6 +128,18 @@
     const title=document.createElement('div');title.className='ve-label';title.textContent='Selected: '+el.tagName.toLowerCase()+(el.id?' #'+el.id:'');inspector.append(title);
     const key=path(el),props=draft.styles[key]||{};
     const current=(p)=>props[p]||el.style.getPropertyValue(p)||getComputedStyle(el).getPropertyValue(p);
+    if(el instanceof HTMLImageElement){
+      const imageUrl=input('url',el.getAttribute('src')||'','HTTPS or site-relative image URL');
+      imageUrl.addEventListener('change',()=>{if(!/^https:\/\//i.test(imageUrl.value)&&!imageUrl.value.startsWith('/'))return say('Use HTTPS or a site-relative image path.');saveHistory();draft.styles[key]={...(draft.styles[key]||{}),'--ve-image-src':imageUrl.value};el.src=imageUrl.value;persist();say('Image source updated in this preview.');});
+      const altText=input('text',el.alt,'Accessible image description');
+      altText.addEventListener('change',()=>{saveHistory();draft.styles[key]={...(draft.styles[key]||{}),'--ve-image-alt':altText.value};el.alt=altText.value;persist();say('Image description updated in this preview.');});
+      inspector.append(field('Image URL',imageUrl),field('Image alt text',altText));
+    }
+    if(el instanceof HTMLAnchorElement){
+      const href=input('url',el.getAttribute('href')||'','#section or HTTPS URL');
+      href.addEventListener('change',()=>{const safe=safeUrl(href.value);saveHistory();draft.styles[key]={...(draft.styles[key]||{}),'--ve-link-href':safe};el.setAttribute('href',safe);persist();say('Link destination updated in this preview.');});
+      inspector.append(field('Link URL',href));
+    }
     if(el.dataset.veBlockId){
       const item=draft.blocks.find(b=>b.id===el.dataset.veBlockId);
       if(item){
