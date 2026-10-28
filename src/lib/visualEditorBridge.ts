@@ -77,7 +77,57 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
  for (const [selector, hide] of Object.entries(hidden)) {
   try { root.querySelectorAll(selector).forEach((el) => { if (hide === true) (el as HTMLElement).style.display='none'; }); } catch { /* stale selector */ }
  }
- const blocks = Array.isArray(payload.blocks) ? payload.blocks as Array<Record<string,unknown>> : [];
+ 
+  const actions = payload.actions && typeof payload.actions === 'object' ? payload.actions as Record<string, Record<string, unknown>> : {};
+  const safeHref = (raw: unknown) => {
+   if (typeof raw !== 'string') return '#';
+   try { const u = new URL(raw, location.origin); return ['https:','http:','mailto:'].includes(u.protocol) || raw.startsWith('#') ? raw : '#'; } catch { return raw.startsWith('#') ? raw : '#'; }
+  };
+  const makeMenu = (items: unknown) => {
+   const menu = document.createElement('div');
+   menu.style.cssText = 'display:none;gap:5px;padding:8px;margin:6px 0;border:1px solid #8d7747;border-radius:8px;background:#101a15';
+   menu.setAttribute('data-ve-published-menu','true');
+   (Array.isArray(items) ? items : []).forEach((entry) => {
+    if (!entry || typeof entry !== 'object') return;
+    const item = entry as Record<string, unknown>;
+    if (typeof item.label !== 'string' || !item.label.trim()) return;
+    const a = document.createElement('a'); a.textContent = item.label.slice(0,100); a.href = safeHref(item.href);
+    a.style.cssText = 'display:block;color:#f2eee4;padding:7px;text-decoration:none;border-radius:5px';
+    menu.append(a);
+   });
+   return menu;
+  };
+  for (const [selector, action] of Object.entries(actions)) {
+   if (!action || typeof action !== 'object') continue;
+   let el: Element|null=null; try { el=root.querySelector(selector); } catch { continue; }
+   if (!el || el.closest('#ggmc-visual-editor')) continue;
+   const items = Array.isArray(action.items) ? action.items : [];
+   if (action.mode === 'text' && typeof action.text === 'string' && action.text) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let node: Node|null;
+    while ((node=walker.nextNode())) {
+     const content=node.textContent||''; const at=content.indexOf(action.text); if(at<0) continue;
+     const range=document.createRange(); range.setStart(node,at); range.setEnd(node,at+action.text.length);
+     const control=document.createElement(action.type==='link'?'a':'button');
+     control.textContent=action.text; control.style.cssText='display:inline-block;padding:8px 14px;border:0;border-radius:24px;background:#c4a252;color:#07100b;text-decoration:none;font:600 13px system-ui,sans-serif;cursor:pointer';
+     if(action.type==='link') (control as HTMLAnchorElement).href=safeHref(action.href);
+     else (control as HTMLButtonElement).type='button';
+     try { range.surroundContents(control); } catch { continue; }
+     if(action.type==='button' && items.length) {
+      const menu=makeMenu(items); menu.style.display='none'; control.setAttribute('aria-haspopup','true'); control.setAttribute('aria-expanded','false');
+      control.insertAdjacentElement('afterend',menu);
+      control.addEventListener('click',()=>{ const opening=menu.style.display==='none'; menu.style.display=opening?'grid':'none'; control.setAttribute('aria-expanded',String(opening)); });
+     }
+     break;
+    }
+   } else if (action.mode === 'element' && action.type === 'dropdown' && (el instanceof HTMLButtonElement || el instanceof HTMLAnchorElement)) {
+    const control=el as HTMLButtonElement|HTMLAnchorElement; if(control.dataset.vePublishedDropdown==='true') continue;
+    control.dataset.vePublishedDropdown='true'; control.setAttribute('aria-haspopup','true'); control.setAttribute('aria-expanded','false');
+    const menu=makeMenu(items); control.insertAdjacentElement('afterend',menu);
+    control.addEventListener('click',(event)=>{ if(control instanceof HTMLAnchorElement) event.preventDefault(); const opening=menu.style.display==='none'; menu.style.display=opening?'grid':'none'; control.setAttribute('aria-expanded',String(opening)); });
+   }
+  }
+
+  const blocks = Array.isArray(payload.blocks) ? payload.blocks as Array<Record<string,unknown>> : [];
  const main = root.querySelector('main') || root;
  for (const block of blocks) {
   const id = typeof block.id === 'string' ? block.id : '';
