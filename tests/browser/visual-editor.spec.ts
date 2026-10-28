@@ -46,9 +46,9 @@ test('undo and redo restore the edited canvas text', async ({ page }) => {
  const headline = page.locator('#headline');
  await headline.fill('Temporary undo test');
  await expect(headline).toHaveText('Temporary undo test');
- await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Undo' }).click();
+ await page.getByRole('button', { name: 'Undo', exact: true }).click();
  await expect(headline).toHaveText('White text that should be editable');
- await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Redo' }).click();
+ await page.getByRole('button', { name: 'Redo', exact: true }).click();
  await expect(headline).toHaveText('Temporary undo test');
 });
 
@@ -105,7 +105,7 @@ test('undo restores the original text-node positions around nested markup', asyn
  await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Mobile' }).click();
  const afterEdit = await nested.evaluate(el => [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent));
  expect(afterEdit).toEqual(['Updated section label ', '.']);
- await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Undo' }).click();
+ await page.getByRole('button', { name: 'Undo', exact: true }).click();
  const afterUndo = await nested.evaluate(el => [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent));
  expect(afterUndo).toEqual(['Section label ', '.']);
  await expect(nested.locator('a')).toHaveAttribute('href', '#contact');
