@@ -60,7 +60,7 @@ function safePublishedSelector(selector: string): boolean {
  return typeof selector === 'string' && selector.length > 0 && selector.length <= 500 && !/^(?:html|body|#root|#ggmc-visual-editor)$/i.test(selector.trim());
 }
 function safePublishedCssValue(value: unknown): value is string {
- return typeof value === 'string' && value.length < 100 && !/(?:url\\s*\\(|expression\\s*\\(|javascript\\s*:|@import|!important|[{}<>\\\\])/i.test(value);
+ return typeof value === 'string' && value.length < 100 && !/(?:url\s*\(|expression\s*\(|javascript\s*:|@import|!important|[{}<>\\\\])/i.test(value);
 }
 
 /** Apply a published snapshot. Inserted content is rendered with textContent and safe URL checks. */
