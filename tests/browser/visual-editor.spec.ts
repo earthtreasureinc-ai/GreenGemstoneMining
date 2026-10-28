@@ -208,6 +208,26 @@ test('layer search finds elements beyond the initial layer list', async ({ page 
  await expect(page.locator('#ggmc-visual-editor')).toContainText('Selected:');
 });
 
+test('simple text formatting and rotation controls apply to the selected element', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ await page.getByRole('button', { name: 'Select element', exact: true }).click();
+ const headline = page.locator('#headline');
+ await headline.click();
+ await page.getByLabel('Font weight').selectOption('700');
+ await expect(headline).toHaveCSS('font-weight', '700');
+ await page.getByLabel('Font style').selectOption('italic');
+ await expect(headline).toHaveCSS('font-style', 'italic');
+ await page.getByLabel('Text decoration').selectOption('underline');
+ await expect(headline).toHaveCSS('text-decoration-line', 'underline');
+ await page.getByLabel('Text case').selectOption('uppercase');
+ await expect(headline).toHaveCSS('text-transform', 'uppercase');
+ await page.getByLabel('Rotation in degrees').fill('12');
+ await page.getByLabel('Rotation in degrees').press('Tab');
+ await expect(headline).toHaveCSS('rotate', '12deg');
+ await page.getByRole('button', { name: 'Undo', exact: true }).click();
+ await expect(headline).not.toHaveCSS('rotate', '12deg');
+});
+
 test('selected element controls style, hide/show, move, duplicate, and remove', async ({ page }) => {
  await page.goto(fixture + '?edit=1');
  await page.getByRole('button', { name: 'Select element', exact: true }).click();
