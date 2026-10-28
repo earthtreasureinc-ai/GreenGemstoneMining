@@ -10,6 +10,7 @@
   const copy = (v) => JSON.parse(JSON.stringify(v));
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
   let panel, inspector, status, counter, layers, textStart = null, lastSelection = null;
+  const styleBaselines = new WeakMap(); let lastAppliedStyles = [], lastHiddenElements = [];
   let serverDraftId=null,serverVersion=0,serverDraftStatus='draft';
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -78,6 +79,8 @@
   function refresh() {
     if(applying)return; applying=true;
     try {
+      const wantedBlockIds = new Set(draft.blocks.map(block=>String(block.id)));
+      root.querySelectorAll('[data-ve-block-id]').forEach(el=>{if(!wantedBlockIds.has(el.dataset.veBlockId||''))el.remove();});
       draft.blocks.forEach((block) => {
         let el=root.querySelector('[data-ve-block-id="'+block.id+'"]');
         const stamp=JSON.stringify(block);
@@ -107,8 +110,15 @@
         const text=draft.text[key];if(text&&typeof text.after==='string'&&el!==document.activeElement&&el.textContent!==text.after)el.textContent=text.after;
         el.contentEditable=mode==='text'?'true':'false';el.spellcheck=mode==='text';
       });
-      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>{if(prop==='--ve-image-src'&&el instanceof HTMLImageElement&&typeof val==='string'&&(val.startsWith('https://')||val.startsWith('/')))el.src=val;else if(prop==='--ve-image-alt'&&el instanceof HTMLImageElement&&typeof val==='string')el.alt=val;else if(prop==='--ve-link-href'&&el instanceof HTMLAnchorElement&&typeof val==='string')el.setAttribute('href',safeUrl(val));else if(!prop.startsWith('--ve-'))el.style.setProperty(prop,val);})));
-      Object.entries(draft.hidden).forEach(([selector,hide])=>all(selector).forEach(el=>el.style.display=hide?'none':''));
+      const rememberStyle=(el,prop)=>{let map=styleBaselines.get(el);if(!map){map=new Map();styleBaselines.set(el,map);}if(!map.has(prop))map.set(prop,el.style.getPropertyValue(prop));return map.get(prop);};
+      const nextAppliedStyles=[];
+      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>{if(prop==='--ve-image-src'&&el instanceof HTMLImageElement&&typeof val==='string'&&(val.startsWith('https://')||val.startsWith('/')))el.src=val;else if(prop==='--ve-image-alt'&&el instanceof HTMLImageElement&&typeof val==='string')el.alt=val;else if(prop==='--ve-link-href'&&el instanceof HTMLAnchorElement&&typeof val==='string')el.setAttribute('href',safeUrl(val));else if(!prop.startsWith('--ve-')){rememberStyle(el,prop);el.style.setProperty(prop,val);nextAppliedStyles.push({el,prop});}})));
+      lastAppliedStyles.forEach(({el,prop})=>{if(!nextAppliedStyles.some(next=>next.el===el&&next.prop===prop)){const base=styleBaselines.get(el)?.get(prop);if(base!==undefined){if(base)el.style.setProperty(prop,base);else el.style.removeProperty(prop);}}});
+      lastAppliedStyles=nextAppliedStyles;
+      const nextHidden=[];
+      Object.entries(draft.hidden).forEach(([selector,hide])=>{if(hide===true)all(selector).forEach(el=>{rememberStyle(el,'display');el.style.display='none';nextHidden.push(el);});});
+      lastHiddenElements.forEach(el=>{if(!nextHidden.includes(el)&&!nextAppliedStyles.some(x=>x.el===el&&x.prop==='display')){const base=styleBaselines.get(el)?.get('display');if(base!==undefined){if(base)el.style.setProperty('display',base);else el.style.removeProperty('display');}}});
+      lastHiddenElements=nextHidden;
       applyActions();
       if(selected&&!document.contains(selected))selected=null;
       if(selected)selected.dataset.veSelected='true';
@@ -187,7 +197,7 @@
     const remove=document.createElement('button');remove.className='danger';remove.textContent=el.dataset.veBlockId?'Remove block':'Hide element';remove.addEventListener('click',()=>{if(el.dataset.veBlockId){if(!confirm('Remove this added block from the draft?'))return;saveHistory();draft.blocks=draft.blocks.filter(b=>b.id!==el.dataset.veBlockId);selected=null;applyChange('Added block removed from the local draft.');inspect(null);}else{saveHistory();draft.hidden[key]=true;applyChange('Element hidden in the local draft.');inspect(el);}});
     actions.append(hide,up,down,duplicate,reset,remove);inspector.append(advanced,actions);
   }
-  function move(el,direction){const sib=el.parentElement&&[...el.parentElement.children].filter(x=>x!==panel&&!x.dataset.veWrap);const i=sib?sib.indexOf(el):-1;const target=sib&&sib[i+direction];if(!target)return say('Cannot move further in that direction.');saveHistory();if(direction<0)el.parentElement.insertBefore(el,target);else el.parentElement.insertBefore(target,el);persist();renderLayers();say('Moved in this preview and saved in the browser draft. Export and review the draft before publishing.');}
+  function move(el,direction){const sib=el.parentElement&&[...el.parentElement.children].filter(x=>x!==panel&&!x.dataset.veWrap);const i=sib?sib.indexOf(el):-1;const target=sib&&sib[i+direction];if(!target)return say('Cannot move further in that direction.');saveHistory();if(direction<0)el.parentElement.insertBefore(el,target);else el.parentElement.insertBefore(target,el);say('Moved in this preview. Ordering of existing website elements is preview-only; added-block order is saved in the draft.');}
   function duplicateBlock(el){
     if(!el||!el.parentElement)return;
     const title=(el.textContent||'').trim().slice(0,90)||'Duplicated block';
