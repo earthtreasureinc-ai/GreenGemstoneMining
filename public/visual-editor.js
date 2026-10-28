@@ -10,7 +10,7 @@
   const copy = (v) => JSON.parse(JSON.stringify(v));
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
   let panel, inspector, status, counter, layers, textStart = null, lastSelection = null, layerFilter = '', layerOffset = 0;
-  const styleBaselines = new WeakMap(); let lastAppliedStyles = [], lastHiddenElements = [];
+  const styleBaselines = new WeakMap(), imageSrcBaselines = new WeakMap(), imageAltBaselines = new WeakMap(); let lastAppliedStyles = [], lastAppliedImageSrc = [], lastAppliedImageAlt = [], lastHiddenElements = [];
   let observer = null;
   const lifetime = new AbortController();
   const rootStyleBaseline = ['max-width','width','margin-inline','box-shadow'].map(prop => [prop, root.style.getPropertyValue(prop), root.style.getPropertyPriority(prop)]);
@@ -59,6 +59,15 @@
   const saveHistory = () => { undo.push(copy(draft)); if (undo.length>60) undo.shift(); redo=[]; };
   const applyChange = (message) => { persist(); refresh(); renderLayers(); if(selected) inspect(selected); say(message||'Saved locally. This is not published.'); };
   const safeUrl = (value) => { try { const u=new URL(value,location.origin); return ['https:','http:','mailto:'].includes(u.protocol)||String(value).startsWith('#')?value:'#'; } catch { return String(value).startsWith('#')?value:'#'; } };
+  const safeImageSrc = value => typeof value==='string'&&((/^https:\/\//i.test(value))||(value.startsWith('/')&&!value.startsWith('//'))||/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+=*$/i.test(value));
+  async function compressImage(file){
+    if(!file||!['image/jpeg','image/png','image/webp'].includes(file.type))throw Error('Choose a JPG, PNG, or WebP image.');
+    const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    const ctx=canvas.getContext('2d');if(!ctx)throw Error('This browser cannot prepare the image.');ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.78));if(!blob||blob.size>1_100_000)throw Error('This image is still too large after compression. Choose a smaller image.');
+    return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error('Could not read this image.'));reader.readAsDataURL(blob);});
+  }
   const makeBlock = (item) => {
     const el=document.createElement(item.kind==='section'?'section':'article');
     el.dataset.veBlockId=item.id;
@@ -85,7 +94,12 @@
   const directTextValue = (el) => directTextNodes(el).map(n=>n.textContent||'').join('');
   const rememberDirectText = (el) => {if(!directTextBaselines.has(el))directTextBaselines.set(el,directTextNodes(el).map(n=>n.textContent||''));};
   const setDirectText = (el,value) => {
-    const nodes=directTextNodes(el);if(!nodes.length)return;
+    const nodes=directTextNodes(el);
+    if(!nodes.length){
+      [...el.childNodes].filter(n=>n.nodeType===Node.ELEMENT_NODE&&n.tagName==='BR').forEach(n=>n.remove());
+      if(value){const next=[...el.childNodes].find(n=>n.nodeType===Node.ELEMENT_NODE);el.insertBefore(document.createTextNode(value),next||null);}
+      return;
+    }
     const baseline=directTextBaselines.get(el);
     if(baseline&&value===baseline.join('')){nodes.forEach((node,index)=>{node.textContent=baseline[index]||'';});return;}
     const children=[...el.childNodes],firstElement=children.findIndex(n=>n.nodeType===Node.ELEMENT_NODE),lastElement=children.findLastIndex(n=>n.nodeType===Node.ELEMENT_NODE);
@@ -126,10 +140,13 @@
       [...root.querySelectorAll('*')].forEach(el=>{
         if(['SCRIPT','STYLE','SVG','PATH','INPUT','TEXTAREA','SELECT','BUTTON','OPTION','NOSCRIPT'].includes(el.tagName)||el.closest('#'+ID+',svg,[aria-hidden="true"],[data-ve-block-id]'))return;
         const nodes=directTextNodes(el),hasDirectText=nodes.some(n=>(n.textContent||'').trim());
-        if(!hasDirectText){el.removeAttribute('contenteditable');return;}
-        const key=path(el); if(!key||!(el.textContent||'').trim())return;
+        const key=path(el); if(!key)return;
+        const text=draft.text[key],hasAppliedText=Object.hasOwn(el.dataset,'veAppliedText');
+        // Keep empty text targets in the restore path: deleting their text is a
+        // valid edit, and Undo must be able to put the original text back.
+        if(!hasDirectText&&!text&&!hasAppliedText){el.removeAttribute('contenteditable');return;}
+        if(!(el.textContent||'').trim()&&!text&&!hasAppliedText)return;
         el.dataset.veKey=key;if(el.childElementCount>0)rememberDirectText(el);if(!('veOriginal' in el.dataset))el.dataset.veOriginal=el.childElementCount===0?(el.textContent||''):directTextValue(el);
-        const text=draft.text[key];
         if(text&&typeof text.after==='string'&&el!==document.activeElement){
           if(el.childElementCount===0&&el.textContent!==text.after)el.textContent=text.after;
           else if(el.childElementCount>0&&directTextValue(el)!==text.after)setDirectText(el,text.after);
@@ -146,8 +163,17 @@
         el.contentEditable=editable&&mode==='text'?'true':'false';el.spellcheck=editable&&mode==='text';
       });
       const rememberStyle=(el,prop)=>{let map=styleBaselines.get(el);if(!map){map=new Map();styleBaselines.set(el,map);}if(!map.has(prop))map.set(prop,el.style.getPropertyValue(prop));return map.get(prop);};
-      const nextAppliedStyles=[];
-      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>{if(prop==='--ve-image-src'&&el instanceof HTMLImageElement&&typeof val==='string'&&(val.startsWith('https://')||val.startsWith('/')))el.src=val;else if(prop==='--ve-image-alt'&&el instanceof HTMLImageElement&&typeof val==='string')el.alt=val;else if(prop==='--ve-link-href'&&el instanceof HTMLAnchorElement&&typeof val==='string')el.setAttribute('href',safeUrl(val));else if(!prop.startsWith('--ve-')){rememberStyle(el,prop);el.style.setProperty(prop,val);nextAppliedStyles.push({el,prop});}})));
+      const nextAppliedStyles=[],nextAppliedImageSrc=[],nextAppliedImageAlt=[];
+      const customCss={'--ve-background-image':'background-image','--ve-background-size':'background-size','--ve-background-position':'background-position','--ve-image-filter':'filter','--ve-object-fit':'object-fit','--ve-object-position':'object-position'};
+      Object.entries(draft.styles).forEach(([selector,props])=>all(selector).forEach(el=>Object.entries(props).forEach(([prop,val])=>{
+        if(prop==='--ve-image-src'&&el instanceof HTMLImageElement&&safeImageSrc(val)){if(!imageSrcBaselines.has(el))imageSrcBaselines.set(el,el.getAttribute('src')||'');el.src=val;nextAppliedImageSrc.push(el);}
+        else if(prop==='--ve-image-alt'&&el instanceof HTMLImageElement&&typeof val==='string'){if(!imageAltBaselines.has(el))imageAltBaselines.set(el,el.alt);el.alt=val;nextAppliedImageAlt.push(el);}
+        else if(prop==='--ve-link-href'&&el instanceof HTMLAnchorElement&&typeof val==='string')el.setAttribute('href',safeUrl(val));
+        else {const cssProp=customCss[prop]||(!prop.startsWith('--ve-')?prop:null);if(cssProp){rememberStyle(el,cssProp);const cssVal=prop==='--ve-background-image'&&safeImageSrc(val)?`url("${val}")`:val;el.style.setProperty(cssProp,cssVal);nextAppliedStyles.push({el,prop:cssProp});}}
+      })));
+      lastAppliedImageSrc.forEach(el=>{if(!nextAppliedImageSrc.includes(el)){const base=imageSrcBaselines.get(el);if(base!==undefined)el.setAttribute('src',base);imageSrcBaselines.delete(el);}});
+      lastAppliedImageAlt.forEach(el=>{if(!nextAppliedImageAlt.includes(el)){const base=imageAltBaselines.get(el);if(base!==undefined)el.alt=base;imageAltBaselines.delete(el);}});
+      lastAppliedImageSrc=nextAppliedImageSrc;lastAppliedImageAlt=nextAppliedImageAlt;
       lastAppliedStyles.forEach(({el,prop})=>{if(!nextAppliedStyles.some(next=>next.el===el&&next.prop===prop)){const base=styleBaselines.get(el)?.get(prop);if(base!==undefined){if(base)el.style.setProperty(prop,base);else el.style.removeProperty(prop);}}});
       lastAppliedStyles=nextAppliedStyles;
       const nextHidden=[];
@@ -162,6 +188,7 @@
   }
   const field = (label, control) => {const wrap=document.createElement('div');wrap.className='ve-field';const l=document.createElement('label');l.textContent=label;wrap.append(l,control);return wrap;};
   const input = (type,value,placeholder) => {const i=document.createElement('input');i.type=type;i.value=value||'';if(placeholder)i.placeholder=placeholder;return i;};
+  const imageFileField=(label,onReady)=>{const file=input('file','','');file.accept='image/jpeg,image/png,image/webp';file.setAttribute('aria-label',label);file.addEventListener('change',async()=>{try{say('Preparing image for this browser draft…');const data=await compressImage(file.files?.[0]);onReady(data);}catch(err){say(err?.message||'Could not prepare this image.');}finally{file.value='';}});return field(label,file);};
   const toHex = (value) => {if(/^#[0-9a-f]{6}$/i.test(value))return value;const m=(value||'').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);return m?'#'+m.slice(1,4).map(v=>Number(v).toString(16).padStart(2,'0')).join(''):'#ffffff';};
   const cssLength = (v) => /^(auto|0|[0-9.]+(px|rem|em|%|vw|vh))$/i.test(v.trim())?v.trim():'initial';
   function selectElement(el){if(selected)delete selected.dataset.veSelected;selected=el;if(selected)selected.dataset.veSelected='true';inspect(selected);}
@@ -175,16 +202,29 @@
     const key=path(el),props=draft.styles[key]||{};
     const current=(p)=>props[p]||el.style.getPropertyValue(p)||getComputedStyle(el).getPropertyValue(p);
     if(el.childElementCount>0&&directTextNodes(el).some(n=>(n.textContent||'').trim())){
-      const directText=document.createElement('textarea');directText.value=draft.text[key]?.after??directTextValue(el);directText.rows=3;directText.setAttribute('aria-label','Text content without changing nested links or formatting');
-      directText.addEventListener('change',()=>{saveHistory();const before=draft.text[key]?.before??(el.dataset.veOriginal||directTextValue(el));draft.text[key]={before,after:directText.value};setDirectText(el,directText.value);el.dataset.veAppliedText=directText.value;persist();say('Text updated while preserving nested markup.');});
-      inspector.append(field('Text (preserve links/formatting)',directText));
+      const directText=document.createElement('textarea');directText.value=draft.text[key]?.after??directTextValue(el);directText.rows=3;directText.setAttribute('aria-label','Edit this text while keeping links and formatting');
+      directText.addEventListener('change',()=>{saveHistory();const before=draft.text[key]?.before??(el.dataset.veOriginal||directTextValue(el));const trailingSpace=(directTextValue(el).match(/\s+$/)||[''])[0];const value=trailingSpace&&!/\s$/.test(directText.value)?directText.value+trailingSpace:directText.value;draft.text[key]={before,after:value};setDirectText(el,value);el.dataset.veAppliedText=value;persist();say('Text updated while preserving nested markup.');});
+      inspector.append(field('Edit text',directText));
+    }
+    if(['SECTION','ARTICLE','HEADER','FOOTER','MAIN','DIV'].includes(el.tagName)){
+      const bgUrl=input('url',props['--ve-background-image']||'','HTTPS or site-relative image URL');bgUrl.setAttribute('aria-label','Background image URL');
+      bgUrl.addEventListener('change',()=>{if(!safeImageSrc(bgUrl.value))return say('Use HTTPS, a site image path, or choose an image from this device.');changeStyle('--ve-background-image',bgUrl.value);});
+      const bgFit=document.createElement('select');bgFit.setAttribute('aria-label','Background fit');[['cover','Fill background'],['contain','Show whole image']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;bgFit.append(o);});bgFit.value=props['--ve-background-size']||'cover';bgFit.addEventListener('change',()=>changeStyle('--ve-background-size',bgFit.value));
+      const bgPosition=input('text',props['--ve-background-position']||'center center','e.g. center 40%');bgPosition.setAttribute('aria-label','Background focus');bgPosition.addEventListener('change',()=>{if(!/^(left|center|right|\d{1,3}%)(\s+(top|center|bottom|\d{1,3}%))?$/.test(bgPosition.value.trim()))return say('Use a position such as center 40% or 60% 40%.');changeStyle('--ve-background-position',bgPosition.value.trim());});
+      const choose=imageFileField('Choose background image from this device',data=>changeStyle('--ve-background-image',data));
+      const clear=document.createElement('button');clear.textContent='Remove background image';clear.addEventListener('click',()=>{saveHistory();delete draft.styles[key]?.['--ve-background-image'];applyChange('Background image removed from this draft.');});
+      inspector.append(field('Background image URL',bgUrl),choose,field('Background fit',bgFit),field('Background focus',bgPosition),clear);
     }
     if(el instanceof HTMLImageElement){
       const imageUrl=input('url',el.getAttribute('src')||'','HTTPS or site-relative image URL');
-      imageUrl.addEventListener('change',()=>{if(!/^https:\/\//i.test(imageUrl.value)&&!imageUrl.value.startsWith('/'))return say('Use HTTPS or a site-relative image path.');saveHistory();draft.styles[key]={...(draft.styles[key]||{}),'--ve-image-src':imageUrl.value};el.src=imageUrl.value;persist();say('Image source updated in this preview.');});
+      imageUrl.addEventListener('change',()=>{if(!safeImageSrc(imageUrl.value))return say('Use HTTPS, a site image path, or choose a JPG, PNG, or WebP image.');changeStyle('--ve-image-src',imageUrl.value);});
       const altText=input('text',el.alt,'Accessible image description');
-      altText.addEventListener('change',()=>{saveHistory();draft.styles[key]={...(draft.styles[key]||{}),'--ve-image-alt':altText.value};el.alt=altText.value;persist();say('Image description updated in this preview.');});
-      inspector.append(field('Image URL',imageUrl),field('Image alt text',altText));
+      altText.addEventListener('change',()=>changeStyle('--ve-image-alt',altText.value));
+      const fit=document.createElement('select');fit.setAttribute('aria-label','Image fit');[['cover','Fill frame'],['contain','Show whole image'],['fill','Stretch']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;fit.append(o);});fit.value=props['--ve-object-fit']||'cover';fit.addEventListener('change',()=>changeStyle('--ve-object-fit',fit.value));
+      const focus=input('text',props['--ve-object-position']||'50% 50%','e.g. 60% 40%');focus.setAttribute('aria-label','Image focus (horizontal, vertical)');focus.addEventListener('change',()=>{if(!/^\d{1,3}%\s+\d{1,3}%$/.test(focus.value.trim()))return say('Use two focus values such as 60% 40%.');changeStyle('--ve-object-position',focus.value.trim());});
+      const filters=document.createElement('select');filters.setAttribute('aria-label','Image look');[['none','Original'],['brightness(1.08) saturate(1.15)','Brighter'],['saturate(1.35)','More colour'],['grayscale(1)','Black and white'],['sepia(.28) saturate(1.1)','Warm tone']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;filters.append(o);});filters.value=props['--ve-image-filter']||'none';filters.addEventListener('change',()=>changeStyle('--ve-image-filter',filters.value));
+      const choose=imageFileField('Replace image from this device',data=>changeStyle('--ve-image-src',data));
+      inspector.append(choose,field('Image URL',imageUrl),field('Image description',altText),field('Image fit',fit),field('Image focus (horizontal, vertical)',focus),field('Image look',filters));
     }
     if(el instanceof HTMLAnchorElement){
       const href=input('url',el.getAttribute('href')||'','#section or HTTPS URL');
@@ -204,8 +244,8 @@
         }
         if(item.kind==='image'){
           const src=input('url',item.src,'HTTPS image URL or /path');
-          src.addEventListener('change',()=>{if(!/^https:\/\//i.test(src.value)&&!src.value.startsWith('/'))return say('Use HTTPS or a site-relative image path.');saveHistory();item.src=src.value;applyChange('Image source updated.');});
-          inspector.append(field('Image URL',src));
+          src.addEventListener('change',()=>{if(!safeImageSrc(src.value))return say('Use HTTPS, a site image path, or choose an image from this device.');saveHistory();item.src=src.value;applyChange('Image source updated.');});
+          inspector.append(imageFileField('Choose image from this device',data=>{saveHistory();item.src=data;applyChange('Image added to this browser draft.');}),field('Image URL',src));
           const alt=input('text',item.alt,'Accessible description');
           alt.addEventListener('change',()=>{saveHistory();item.alt=alt.value;applyChange('Image alt text updated.');});
           inspector.append(field('Image alt text',alt));
@@ -306,7 +346,9 @@
       row.className='ve-layer-item';
       row.textContent=(el.tagName.toLowerCase())+(el.id?' #'+el.id:'')+' — '+(el.getAttribute('aria-label')||el.getAttribute('alt')||(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,32));
       row.style.cssText='text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;font-weight:500';
-      row.addEventListener('click',()=>{setMode('select');selectElement(el);});list.append(row);
+      // Selecting a layer should not silently turn off text editing. Keep the
+      // owner's chosen mode; text-mode users can immediately edit its text.
+      row.addEventListener('click',()=>selectElement(el));list.append(row);
     });
     const resultCount=document.createElement('p');resultCount.className='ve-note';resultCount.setAttribute('aria-live','polite');resultCount.textContent=query?(matching.length?`Showing ${layerOffset+1}–${Math.min(layerOffset+100,matching.length)} of ${matching.length} matches`:'No matching items. Try a shorter search.'):`Showing ${layerOffset+1}–${Math.min(layerOffset+100,nodes.length)} of ${nodes.length} items. Search to find the rest.`;layers.append(resultCount);
     if(layerOffset+100<matching.length){const more=document.createElement('button');more.textContent='Show more results';more.addEventListener('click',()=>{layerOffset+=100;renderLayers();});layers.append(more);}
@@ -388,12 +430,13 @@
     const u=new URL(location.href);u.searchParams.delete('edit');history.replaceState({},'',u);
   }
   function setMode(next){if(!panel||!panel.isConnected)return;mode=next;document.body.classList.toggle('ggmc-ve-text',mode==='text');document.body.classList.toggle('ggmc-ve-select',mode==='select');panel.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));refresh();say(mode==='text'?'Click outlined text and type. Your edits save locally.':'Click an element on the page to change its styling, visibility, or position.');}
-  function doUndo(){if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Undid the previous change.');}
-  function doRedo(){if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Restored the next change.');}
+  function flushActiveText(){const active=document.activeElement;if(active instanceof HTMLElement&&active.isContentEditable)active.blur();}
+  function doUndo(){flushActiveText();if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Undid the previous change.');}
+  function doRedo(){flushActiveText();if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Restored the next change.');}
   document.addEventListener('focusin',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.isContentEditable&&el.dataset.veKey)textStart=copy(draft);},{signal:lifetime.signal});
   document.addEventListener('focusout',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.dataset.veKey&&textStart){if(JSON.stringify(textStart)!==JSON.stringify(draft)){undo.push(textStart);if(undo.length>60)undo.shift();redo=[];}textStart=null;}},{signal:lifetime.signal});
   document.addEventListener('input',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(!(el instanceof HTMLElement)||!el.isContentEditable||!el.dataset.veKey)return;const key=el.dataset.veKey;const prev=draft.text[key];draft.text[key]={before:prev?prev.before:(el.dataset.veOriginal||''),after:el.textContent||''};el.dataset.veAppliedText=el.textContent||'';persist();say('Text draft saved in this browser.');},{signal:lifetime.signal});
-  document.addEventListener('click',e=>{if(!panel||!panel.isConnected||panel.contains(e.target))return;const targetElement=e.target instanceof Element?e.target:null;if(targetElement?.closest('[data-ve-inline-action],[data-ve-dropdown-menu],[data-ve-dropdown-trigger="true"]'))return;if(mode==='select'){const el=targetElement?.closest('#root *');if(el&&!el.closest('#'+ID)){e.preventDefault();e.stopPropagation();selectElement(el);}}else if(mode==='text'){const target=targetElement?.closest('#root [data-ve-key]');if(target&&target.childElementCount>0){e.preventDefault();e.stopPropagation();selectElement(target);}else {const el=targetElement?.closest('[data-ve-key][contenteditable=\"true\"]');if(el&&el.closest('a'))e.preventDefault();}}},{capture:true,signal:lifetime.signal});
+  document.addEventListener('click',e=>{if(!panel||!panel.isConnected||panel.contains(e.target))return;const targetElement=e.target instanceof Element?e.target:null;if(targetElement?.closest('[data-ve-inline-action],[data-ve-dropdown-menu],[data-ve-dropdown-trigger="true"]'))return;if(mode==='select'){const el=targetElement?.closest('#root *');if(el&&!el.closest('#'+ID)){e.preventDefault();e.stopPropagation();selectElement(el);}}else if(mode==='text'){const target=targetElement?.closest('#root [data-ve-key]');if(target&&target.childElementCount>0){e.preventDefault();e.stopPropagation();selectElement(target);inspector?.querySelector('textarea[aria-label=\"Edit this text while keeping links and formatting\"]')?.focus();}else {const el=targetElement?.closest('[data-ve-key][contenteditable=\"true\"]');if(el&&el.closest('a'))e.preventDefault();}}},{capture:true,signal:lifetime.signal});
   document.addEventListener('mouseup',e=>{if(!panel||!panel.isConnected||panel.contains(e.target))return;const s=window.getSelection();if(!s||s.isCollapsed||!s.toString().trim())return;const node=s.anchorNode?.parentElement;if(!node||!root.contains(node)||node.closest('#'+ID))return;lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};},{signal:lifetime.signal});
   document.addEventListener('keyup',e=>{if(!panel||!panel.isConnected)return;if(e.target instanceof HTMLElement&&e.target.isContentEditable){const s=window.getSelection();if(s&&!s.isCollapsed&&s.toString().trim()){const node=s.anchorNode?.parentElement;if(node&&root.contains(node))lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};}}},{signal:lifetime.signal});
   document.addEventListener('keydown',e=>{if(!panel||!panel.isConnected)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){e.preventDefault();doRedo();}if(e.key==='Escape'&&mode==='select')setMode('text');},{signal:lifetime.signal});

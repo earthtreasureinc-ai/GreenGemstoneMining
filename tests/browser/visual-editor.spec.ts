@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import path from 'node:path';
 
 const fixture = '/tests/fixtures/visual-editor.html';
 
@@ -39,6 +40,69 @@ test('edit=1 mounts editor, saves white text locally, survives reload and reopen
  await expect(page.locator('#headline')).toHaveText('Updated white headline');
  await page.goto(fixture + '?edit=1');
  await expect(page.locator('#headline')).toHaveText('Updated white headline');
+});
+
+test('choosing a text layer keeps text mode active and supports deleting and undoing white text', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const search = page.getByRole('searchbox', { name: 'Find anything on this page' });
+ await search.fill('White text that should be editable');
+ await page.getByRole('button', { name: /h1 #headline/ }).click();
+ await expect(page.getByRole('button', { name: 'Edit text', exact: true })).toHaveClass(/active/);
+ const headline = page.locator('#headline');
+ await expect(headline).toHaveAttribute('contenteditable', 'true');
+ await headline.fill('');
+ await expect(headline).toBeEmpty();
+ await page.getByRole('button', { name: 'Undo', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Undid');
+ await expect(headline).toHaveText('White text that should be editable');
+});
+
+test('clicking a white text fragment in a mixed-format heading opens its text editor', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const heading = page.locator('#split-headline');
+ const box = await heading.boundingBox();
+ if (!box) throw new Error('Split heading is not visible.');
+ await page.mouse.click(box.x + 2, box.y + box.height / 2);
+ const directText = page.getByRole('textbox', { name: 'Edit this text while keeping links and formatting' });
+ await expect(directText).toBeFocused();
+ await expect(directText).toHaveValue("Somaliland's ");
+ await directText.fill('Somaliland’s');
+ await directText.press('Tab');
+ await expect(heading).toHaveText('Somaliland’s mineral frontier');
+});
+
+test('image editing replaces, crops, filters, backgrounds, and removes images in the local draft', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const sampleImage = path.resolve('public/assets/images/company-field.webp');
+ const image = page.locator('#test-image');
+ await page.getByRole('button', { name: 'Select element', exact: true }).click();
+ await image.click();
+ await page.getByLabel('Replace image from this device').setInputFiles(sampleImage);
+ await expect.poll(() => image.getAttribute('src')).toMatch(/^data:image\/webp;base64,/);
+ await page.getByRole('button', { name: 'Undo', exact: true }).click();
+ await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
+ await page.getByRole('button', { name: 'Redo', exact: true }).click();
+ await expect.poll(() => image.getAttribute('src')).toMatch(/^data:image\/webp;base64,/);
+ await page.getByLabel('Image fit').selectOption('contain');
+ await expect(image).toHaveCSS('object-fit', 'contain');
+ await page.getByRole('textbox', { name: 'Image focus (horizontal, vertical)' }).fill('65% 40%');
+ await page.getByRole('textbox', { name: 'Image focus (horizontal, vertical)' }).press('Tab');
+ await expect(image).toHaveCSS('object-position', '65% 40%');
+ await page.getByLabel('Image look').selectOption('grayscale(1)');
+ await expect(image).toHaveCSS('filter', 'grayscale(1)');
+
+ const main = page.locator('#root main');
+ await page.getByLabel('Find anything on this page').fill('main');
+ await page.getByRole('button', { name: /main —/ }).click();
+ await page.getByLabel('Choose background image from this device').setInputFiles(sampleImage);
+ await expect.poll(() => main.evaluate(el => getComputedStyle(el).backgroundImage)).toContain('data:image/webp');
+ await page.getByLabel('Background fit').selectOption('contain');
+ await expect(main).toHaveCSS('background-size', 'contain');
+ await page.getByLabel('Background focus').fill('center 40%');
+ await page.getByLabel('Background focus').press('Tab');
+ await expect(main).toHaveCSS('background-position', '50% 40%');
+ await page.getByRole('button', { name: 'Remove background image', exact: true }).click();
+ await expect(main).toHaveCSS('background-image', 'none');
 });
 
 test('undo and redo restore the edited canvas text', async ({ page }) => {
@@ -86,7 +150,7 @@ test('nested text inspector edits without removing nested links or buttons', asy
  await page.goto(fixture + '?edit=1');
  const nested = page.locator('.nested');
  await nested.click();
- const directText = page.locator('#ggmc-visual-editor textarea[aria-label="Text content without changing nested links or formatting"]');
+ const directText = page.locator('#ggmc-visual-editor textarea[aria-label="Edit this text while keeping links and formatting"]');
  await expect(directText).toHaveValue('Section label ');
  await directText.fill('Updated section label ');
  await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Mobile' }).click();
@@ -100,7 +164,7 @@ test('undo restores the original text-node positions around nested markup', asyn
  await page.goto(fixture + '?edit=1');
  const nested = page.locator('.nested-punctuation');
  await nested.click();
- const directText = page.locator('#ggmc-visual-editor textarea[aria-label="Text content without changing nested links or formatting"]');
+ const directText = page.locator('#ggmc-visual-editor textarea[aria-label="Edit this text while keeping links and formatting"]');
  await directText.fill('Updated section label .');
  await page.locator('#ggmc-visual-editor button').filter({ hasText: 'Mobile' }).click();
  const afterEdit = await nested.evaluate(el => [...el.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent));
@@ -135,7 +199,7 @@ test('layer search finds elements beyond the initial layer list', async ({ page 
  await page.goto(fixture + '?edit=1');
  const search = page.getByLabel('Find anything on this page');
  await page.getByRole('button', { name: 'Show more results', exact: true }).click();
- await expect(page.locator('#ggmc-visual-editor')).toContainText('Showing 101–114 of 114 items.');
+ await expect(page.locator('#ggmc-visual-editor')).toContainText('Showing 101–116 of 116 items.');
  await search.fill('Extra layer 104');
  const result = page.locator('#ggmc-visual-editor button').filter({ hasText: 'Extra layer 104' }).first();
  await expect(result).toBeVisible();
