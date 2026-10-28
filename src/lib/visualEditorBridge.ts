@@ -56,25 +56,41 @@ export function installVisualEditorBridge(){
  };
 }
 
+function safePublishedSelector(selector: string): boolean {
+ return typeof selector === 'string' && selector.length > 0 && selector.length <= 500 && !/^(?:html|body|#root|#ggmc-visual-editor)$/i.test(selector.trim());
+}
+function safePublishedCssValue(value: unknown): value is string {
+ return typeof value === 'string' && value.length < 100 && !/(?:url\\s*\\(|expression\\s*\\(|javascript\\s*:|@import|!important|[{}<>\\\\])/i.test(value);
+}
+
 /** Apply a published snapshot. Inserted content is rendered with textContent and safe URL checks. */
 export function applyPublishedVisualEditorPayload(payload: Record<string, unknown> | null, root: HTMLElement | null = document.getElementById('root')) {
  if (!payload || !root || typeof payload !== 'object') return;
  const text = payload.text && typeof payload.text === 'object' ? payload.text as Record<string, {after?:unknown}> : {};
  for (const [selector, change] of Object.entries(text)) {
-  if (!change || typeof change.after !== 'string') continue;
-  try { root.querySelectorAll(selector).forEach((el) => { if (!el.closest('#ggmc-visual-editor')) el.textContent = change.after as string; }); } catch { /* stale selector */ }
+  if (!change || typeof change.after !== 'string' || change.after.length > 10000 || !safePublishedSelector(selector)) continue;
+  try {
+   root.querySelectorAll(selector).forEach((el) => {
+    if (el === root || el.closest('#ggmc-visual-editor')) return;
+    if (el.childElementCount === 0) { el.textContent = change.after as string; return; }
+    const directText = Array.from(el.childNodes).find((node) => node.nodeType === Node.TEXT_NODE && (node.textContent || '').trim());
+    if (directText) directText.textContent = change.after as string;
+   });
+  } catch { /* malformed or stale selector */ }
  }
  const styles = payload.styles && typeof payload.styles === 'object' ? payload.styles as Record<string, Record<string, unknown>> : {};
  for (const [selector, props] of Object.entries(styles)) {
+  if (!safePublishedSelector(selector)) continue;
   try { root.querySelectorAll(selector).forEach((el) => Object.entries(props || {}).forEach(([key,value]) => {
    if (key === '--ve-image-src' && el instanceof HTMLImageElement && typeof value === 'string' && (value.startsWith('https://') || value.startsWith('/'))) el.src = value;
    else if (key === '--ve-image-alt' && el instanceof HTMLImageElement && typeof value === 'string' && value.length < 500) el.alt = value;
    else if (key === '--ve-link-href' && el instanceof HTMLAnchorElement && typeof value === 'string') { let href = '#'; try { const u = new URL(value, location.origin); if (['https:', 'http:', 'mailto:'].includes(u.protocol) || value.startsWith('#')) href = value; } catch {} el.setAttribute('href', href); }
-   else if (/^(color|background-color|font-size|font-family|font-weight|font-style|line-height|letter-spacing|text-align|text-decoration|text-transform|padding|padding-top|padding-right|padding-bottom|padding-left|margin|margin-top|margin-right|margin-bottom|margin-left|border|border-color|border-width|border-style|border-radius|box-shadow|width|min-width|max-width|height|min-height|max-height|opacity|display|position|top|right|bottom|left|gap|column-gap|row-gap|object-fit|object-position)$/.test(key) && typeof value === 'string' && value.length < 100) (el as HTMLElement).style.setProperty(key,value);
+   else if (/^(color|background-color|font-size|font-family|font-weight|font-style|line-height|letter-spacing|text-align|text-decoration|text-transform|padding|padding-top|padding-right|padding-bottom|padding-left|margin|margin-top|margin-right|margin-bottom|margin-left|border|border-color|border-width|border-style|border-radius|box-shadow|width|min-width|max-width|height|min-height|max-height|opacity|display|position|top|right|bottom|left|gap|column-gap|row-gap|object-fit|object-position)$/.test(key) && safePublishedCssValue(value)) (el as HTMLElement).style.setProperty(key,value);
   })); } catch { /* stale selector */ }
  }
  const hidden = payload.hidden && typeof payload.hidden === 'object' ? payload.hidden as Record<string,unknown> : {};
  for (const [selector, hide] of Object.entries(hidden)) {
+  if (!safePublishedSelector(selector)) continue;
   try { root.querySelectorAll(selector).forEach((el) => { if (hide === true) (el as HTMLElement).style.display='none'; }); } catch { /* stale selector */ }
  }
  
@@ -99,6 +115,7 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
   };
   for (const [selector, action] of Object.entries(actions)) {
    if (!action || typeof action !== 'object') continue;
+   if (!safePublishedSelector(selector)) continue;
    let el: Element|null=null; try { el=root.querySelector(selector); } catch { continue; }
    if (!el || el.closest('#ggmc-visual-editor')) continue;
    const items = Array.isArray(action.items) ? action.items : [];

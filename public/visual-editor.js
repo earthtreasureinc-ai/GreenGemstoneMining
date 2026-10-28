@@ -11,6 +11,9 @@
   let draft = blank(), undo = [], redo = [], mode = 'text', selected = null, applying = false;
   let panel, inspector, status, counter, layers, textStart = null, lastSelection = null;
   const styleBaselines = new WeakMap(); let lastAppliedStyles = [], lastHiddenElements = [];
+  let observer = null;
+  const rootStyleBaseline = ['max-width','width','margin-inline','box-shadow'].map(prop => [prop, root.style.getPropertyValue(prop), root.style.getPropertyPriority(prop)]);
+  const rootViewportBaseline = root.dataset.veViewport;
   let serverDraftId=null,serverVersion=0,serverDraftStatus='draft';
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -318,7 +321,7 @@
     const tools=document.createElement('div');tools.className='ve-row';
     const exp=document.createElement('button');exp.className='primary';exp.textContent='Export JSON';exp.addEventListener('click',exportDraft);
     const reset=document.createElement('button');reset.className='danger';reset.textContent='Reset draft';reset.addEventListener('click',resetDraft);
-    const close=document.createElement('button');close.textContent='Close';close.addEventListener('click',()=>{if(!confirm('Close the editor? Your local draft remains saved.'))return;document.body.classList.remove('ggmc-ve-on','ggmc-ve-text','ggmc-ve-select');panel.remove();style.remove();const u=new URL(location.href);u.searchParams.delete('edit');history.replaceState({},'',u);});
+    const close=document.createElement('button');close.textContent='Close';close.addEventListener('click',()=>{if(!confirm('Close the editor? Your local draft remains saved.'))return;teardown();});
     tools.append(exp,reset,close);panel.append(tools);
     const label=document.createElement('div');label.className='ve-label';label.textContent='Inspector';panel.append(label);
     inspector=document.createElement('div');panel.append(inspector);
@@ -330,17 +333,27 @@
     counter=document.createElement('div');counter.className='ve-count';panel.append(counter);
     document.body.append(panel);updateCount();inspect(null);
   }
-  function setMode(next){mode=next;document.body.classList.toggle('ggmc-ve-text',mode==='text');document.body.classList.toggle('ggmc-ve-select',mode==='select');panel.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));refresh();say(mode==='text'?'Click outlined text and type. Your edits save locally.':'Click an element on the page to change its styling, visibility, or position.');}
+  function teardown(){
+    if(observer){observer.disconnect();observer=null;}
+    document.body.classList.remove('ggmc-ve-on','ggmc-ve-text','ggmc-ve-select');
+    root.querySelectorAll('[data-ve-key]').forEach(el=>{el.removeAttribute('contenteditable');el.removeAttribute('data-ve-key');});
+    root.querySelectorAll('[data-ve-selected="true"]').forEach(el=>el.removeAttribute('data-ve-selected'));
+    rootStyleBaseline.forEach(([prop,value,priority])=>{if(value)root.style.setProperty(prop,value,priority);else root.style.removeProperty(prop);});
+    if(rootViewportBaseline===undefined)delete root.dataset.veViewport;else root.dataset.veViewport=rootViewportBaseline;
+    if(panel)panel.remove();style.remove();panel=null;mode='closed';selected=null;textStart=null;lastSelection=null;
+    const u=new URL(location.href);u.searchParams.delete('edit');history.replaceState({},'',u);
+  }
+  function setMode(next){if(!panel||!panel.isConnected)return;mode=next;document.body.classList.toggle('ggmc-ve-text',mode==='text');document.body.classList.toggle('ggmc-ve-select',mode==='select');panel.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));refresh();say(mode==='text'?'Click outlined text and type. Your edits save locally.':'Click an element on the page to change its styling, visibility, or position.');}
   function doUndo(){if(!undo.length)return say('Nothing to undo.');redo.push(copy(draft));draft=undo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Undid the previous change.');}
   function doRedo(){if(!redo.length)return say('Nothing to redo.');undo.push(copy(draft));draft=redo.pop();persist();refresh();renderLayers();if(selected&&document.contains(selected))inspect(selected);else inspect(null);say('Restored the next change.');}
-  document.addEventListener('focusin',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.isContentEditable&&el.dataset.veKey)textStart=copy(draft);});
-  document.addEventListener('focusout',e=>{const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.dataset.veKey&&textStart){if(JSON.stringify(textStart)!==JSON.stringify(draft)){undo.push(textStart);if(undo.length>60)undo.shift();redo=[];}textStart=null;}});
-  document.addEventListener('input',e=>{const el=e.target;if(!(el instanceof HTMLElement)||!el.isContentEditable||!el.dataset.veKey)return;const key=el.dataset.veKey;const prev=draft.text[key];draft.text[key]={before:prev?prev.before:(el.dataset.veOriginal||''),after:el.textContent||''};persist();say('Text draft saved in this browser.');});
-  document.addEventListener('click',e=>{if(!panel||panel.contains(e.target))return;if(mode==='select'){const el=e.target instanceof Element?e.target.closest('#root *'):null;if(el&&!el.closest('#'+ID)){e.preventDefault();e.stopPropagation();selectElement(el);}}else if(mode==='text'){const el=e.target instanceof Element?e.target.closest('[data-ve-key][contenteditable="true"]'):null;if(el&&el.closest('a'))e.preventDefault();}},true);
-  document.addEventListener('mouseup',e=>{if(panel&&panel.contains(e.target))return;const s=window.getSelection();if(!s||s.isCollapsed||!s.toString().trim())return;const node=s.anchorNode?.parentElement;if(!node||!root.contains(node)||node.closest('#'+ID))return;lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};});
-  document.addEventListener('keyup',e=>{if(e.target instanceof HTMLElement&&e.target.isContentEditable){const s=window.getSelection();if(s&&!s.isCollapsed&&s.toString().trim()){const node=s.anchorNode?.parentElement;if(node&&root.contains(node))lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};}}});
-  document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){e.preventDefault();doRedo();}if(e.key==='Escape'&&mode==='select')setMode('text');});
+  document.addEventListener('focusin',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.isContentEditable&&el.dataset.veKey)textStart=copy(draft);});
+  document.addEventListener('focusout',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(mode==='text'&&el instanceof HTMLElement&&el.dataset.veKey&&textStart){if(JSON.stringify(textStart)!==JSON.stringify(draft)){undo.push(textStart);if(undo.length>60)undo.shift();redo=[];}textStart=null;}});
+  document.addEventListener('input',e=>{if(!panel||!panel.isConnected)return;const el=e.target;if(!(el instanceof HTMLElement)||!el.isContentEditable||!el.dataset.veKey)return;const key=el.dataset.veKey;const prev=draft.text[key];draft.text[key]={before:prev?prev.before:(el.dataset.veOriginal||''),after:el.textContent||''};persist();say('Text draft saved in this browser.');});
+  document.addEventListener('click',e=>{if(!panel||!panel.isConnected||panel.contains(e.target))return;if(mode==='select'){const el=e.target instanceof Element?e.target.closest('#root *'):null;if(el&&!el.closest('#'+ID)){e.preventDefault();e.stopPropagation();selectElement(el);}}else if(mode==='text'){const el=e.target instanceof Element?e.target.closest('[data-ve-key][contenteditable="true"]'):null;if(el&&el.closest('a'))e.preventDefault();}},true);
+  document.addEventListener('mouseup',e=>{if(!panel||!panel.isConnected||panel.contains(e.target))return;const s=window.getSelection();if(!s||s.isCollapsed||!s.toString().trim())return;const node=s.anchorNode?.parentElement;if(!node||!root.contains(node)||node.closest('#'+ID))return;lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};});
+  document.addEventListener('keyup',e=>{if(!panel||!panel.isConnected)return;if(e.target instanceof HTMLElement&&e.target.isContentEditable){const s=window.getSelection();if(s&&!s.isCollapsed&&s.toString().trim()){const node=s.anchorNode?.parentElement;if(node&&root.contains(node))lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};}}});
+  document.addEventListener('keydown',e=>{if(!panel||!panel.isConnected)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){e.preventDefault();doRedo();}if(e.key==='Escape'&&mode==='select')setMode('text');});
   buildPanel();refresh();setMode('text');
-  const observer=new MutationObserver(()=>refresh());observer.observe(root,{childList:true,subtree:true});
+  observer=new MutationObserver(()=>{if(panel&&panel.isConnected)refresh();});observer.observe(root,{childList:true,subtree:true});
   say('Draft only. No website or production changes are published from this panel.');
 })();
