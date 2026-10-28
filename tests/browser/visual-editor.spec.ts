@@ -11,6 +11,7 @@ test('actual application renders with and without ?edit=1', async ({ page }) => 
  await page.goto('/?edit=1');
  await expect(page.locator('#ggmc-visual-editor')).toBeVisible();
  await expect.poll(() => page.locator('#root').evaluate(el => el.childElementCount)).toBeGreaterThan(0);
+ await expect.poll(() => page.locator('#ggmc-visual-editor .ve-layer-item').count()).toBeGreaterThan(0);
  await expect(page.locator('#root')).toBeVisible();
  expect(pageErrors).toEqual([]);
 });

@@ -303,6 +303,7 @@
     matching.slice(layerOffset,layerOffset+100).forEach(el=>{
       const key=path(el);if(!key||seen.has(key))return;seen.add(key);
       const row=document.createElement('button');
+      row.className='ve-layer-item';
       row.textContent=(el.tagName.toLowerCase())+(el.id?' #'+el.id:'')+' — '+(el.getAttribute('aria-label')||el.getAttribute('alt')||(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,32));
       row.style.cssText='text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;font-weight:500';
       row.addEventListener('click',()=>{setMode('select');selectElement(el);});list.append(row);
@@ -397,6 +398,6 @@
   document.addEventListener('keyup',e=>{if(!panel||!panel.isConnected)return;if(e.target instanceof HTMLElement&&e.target.isContentEditable){const s=window.getSelection();if(s&&!s.isCollapsed&&s.toString().trim()){const node=s.anchorNode?.parentElement;if(node&&root.contains(node))lastSelection={key:path(node.closest('[data-ve-key]')||node),text:s.toString().trim()};}}},{signal:lifetime.signal});
   document.addEventListener('keydown',e=>{if(!panel||!panel.isConnected)return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?doRedo():doUndo();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='y'){e.preventDefault();doRedo();}if(e.key==='Escape'&&mode==='select')setMode('text');},{signal:lifetime.signal});
   buildPanel();refresh();setMode('text');
-  observer=new MutationObserver(()=>{if(panel&&panel.isConnected)refresh();});observer.observe(root,{childList:true,subtree:true});
+  observer=new MutationObserver(()=>{if(panel&&panel.isConnected){refresh();renderLayers();}});observer.observe(root,{childList:true,subtree:true});
   say('Draft only. No website or production changes are published from this panel.');
 })();
