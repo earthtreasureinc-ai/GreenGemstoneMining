@@ -94,14 +94,14 @@
           else (root.querySelector('main')||root).append(el);
         }
       });
-      const textNodes=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
-        const p=n.parentElement;if(!(n.textContent||'').trim()||!p||p.closest('#'+ID+',script,style,svg,input,textarea,select,[aria-hidden="true"],[data-ve-wrap="1"],[data-ve-block-id]'))return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      }});
-      const nodes=[];while(textNodes.nextNode())nodes.push(textNodes.currentNode);
-      nodes.forEach(n=>{if(!n.parentNode)return;const s=document.createElement('span');s.dataset.veWrap='1';n.parentNode.replaceChild(s,n);s.append(n);});
+      // Never wrap text nodes or make container elements editable. Doing either mutates
+      // React-owned markup and lets a keystroke replace an entire section with plain text.
+      // Only leaf elements with their own direct text are safe inline editing targets.
       [...root.querySelectorAll('*')].forEach(el=>{
-        if(['SCRIPT','STYLE','SVG','PATH','INPUT','TEXTAREA','SELECT','BUTTON','OPTION'].includes(el.tagName)||el.closest('#'+ID+',svg,[aria-hidden="true"]'))return;
+        if(['SCRIPT','STYLE','SVG','PATH','INPUT','TEXTAREA','SELECT','BUTTON','OPTION','NOSCRIPT'].includes(el.tagName)||el.closest('#'+ID+',svg,[aria-hidden="true"],[data-ve-block-id]'))return;
+        const hasDirectText=[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&(n.textContent||'').trim());
+        const editable=el.childElementCount===0&&hasDirectText;
+        if(!editable){el.removeAttribute('contenteditable');return;}
         const key=path(el); if(!key||!(el.textContent||'').trim())return;
         el.dataset.veKey=key;if(!('veOriginal' in el.dataset))el.dataset.veOriginal=el.textContent||'';
         const text=draft.text[key];if(text&&typeof text.after==='string'&&el!==document.activeElement&&el.textContent!==text.after)el.textContent=text.after;
