@@ -67,7 +67,7 @@ export function applyPublishedVisualEditorPayload(payload: Record<string, unknow
  const styles = payload.styles && typeof payload.styles === 'object' ? payload.styles as Record<string, Record<string, unknown>> : {};
  for (const [selector, props] of Object.entries(styles)) {
   try { root.querySelectorAll(selector).forEach((el) => Object.entries(props || {}).forEach(([key,value]) => {
-   if (/^(color|background-color|font-size|padding|margin|border-radius|text-align)$/.test(key) && typeof value === 'string' && value.length < 100) (el as HTMLElement).style.setProperty(key,value);
+   if (/^(color|background-color|font-size|font-family|font-weight|font-style|line-height|letter-spacing|text-align|text-decoration|text-transform|padding|padding-top|padding-right|padding-bottom|padding-left|margin|margin-top|margin-right|margin-bottom|margin-left|border|border-color|border-width|border-style|border-radius|box-shadow|width|min-width|max-width|height|min-height|max-height|opacity|display|position|top|right|bottom|left|gap|column-gap|row-gap|object-fit|object-position)$/.test(key) && typeof value === 'string' && value.length < 100) (el as HTMLElement).style.setProperty(key,value);
   })); } catch { /* stale selector */ }
  }
  const hidden = payload.hidden && typeof payload.hidden === 'object' ? payload.hidden as Record<string,unknown> : {};
