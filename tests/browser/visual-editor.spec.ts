@@ -24,6 +24,45 @@ test('normal page render does not mount editor without edit=1', async ({ page })
  await expect(page.locator('body')).not.toHaveClass(/ggmc-ve-on/);
 });
 
+test('preview-only trigger opens and closes the editor without changing page content', async ({ page }) => {
+ await page.goto(fixture + '?preview-editor=1');
+ const trigger = page.getByRole('button', { name: 'Open Preview Editor' });
+ await expect(trigger).toBeVisible();
+ await trigger.click();
+ await expect(page.locator('#ggmc-visual-editor')).toBeVisible();
+ page.on('dialog', dialog => dialog.accept());
+ await page.getByRole('button', { name: 'Close', exact: true }).click();
+ await expect(page.getByRole('button', { name: 'Open Preview Editor' })).toBeVisible();
+ await expect(page.locator('#headline')).toHaveText('White text that should be editable');
+});
+
+test('studio can be resized horizontally, vertically, and diagonally', async ({ page }) => {
+ await page.setViewportSize({ width: 1280, height: 900 });
+ await page.goto(fixture + '?edit=1');
+ const panel = page.locator('#ggmc-visual-editor');
+ const original = await panel.boundingBox();
+ if (!original) throw new Error('Editor is not visible.');
+ const widthHandle = panel.getByRole('separator', { name: 'Resize width', exact: true });
+ const wbox = await widthHandle.boundingBox();
+ if (!wbox) throw new Error('Width handle is not visible.');
+ await page.mouse.move(wbox.x + wbox.width / 2, wbox.y + 10);
+ await page.mouse.down(); await page.mouse.move(wbox.x + wbox.width / 2 - 100, wbox.y + 10); await page.mouse.up();
+ await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(original.width);
+ const heightHandle = panel.getByRole('separator', { name: 'Resize height' });
+ const hbox = await heightHandle.boundingBox();
+ if (!hbox) throw new Error('Height handle is not visible.');
+ const beforeHeight = (await panel.boundingBox())!.height;
+ await page.mouse.move(hbox.x + hbox.width / 2, hbox.y + 2); await page.mouse.down();
+ await page.mouse.move(hbox.x + hbox.width / 2, hbox.y + 90); await page.mouse.up();
+ await expect.poll(async () => (await panel.boundingBox())!.height).toBeLessThan(beforeHeight);
+ const corner = panel.getByRole('separator', { name: 'Resize width and height' });
+ const cbox = await corner.boundingBox(); if (!cbox) throw new Error('Corner handle is not visible.');
+ await page.mouse.move(cbox.x + 2, cbox.y + 2); await page.mouse.down();
+ await page.mouse.move(cbox.x - 70, cbox.y + 70); await page.mouse.up();
+ expect(await page.evaluate(() => localStorage.getItem('ggmc-ve-height'))).not.toBeNull();
+ expect(await page.evaluate(() => localStorage.getItem('ggmc-ve-width'))).not.toBeNull();
+});
+
 test('edit=1 mounts editor, saves white text locally, survives reload and reopen', async ({ page }) => {
  await page.goto(fixture + '?edit=1');
  await expect(page.locator('#ggmc-visual-editor')).toBeVisible();

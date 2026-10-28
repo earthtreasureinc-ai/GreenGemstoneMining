@@ -8,7 +8,13 @@ const SITE_URL = (process.env.VITE_SITE_URL || 'https://green-gemstone-mining.ve
 /** Fills %SITE_URL% in index.html and emits robots.txt + sitemap.xml for the configured domain. */
 const siteFiles = (): Plugin => ({
   name: 'site-files',
-  transformIndexHtml: (html) => html.replaceAll('%SITE_URL%', SITE_URL),
+  transformIndexHtml: (html) => {
+    const withSiteUrl = html.replaceAll('%SITE_URL%', SITE_URL);
+    // This entry point is emitted only in Vercel Preview deployments. Production stays unchanged.
+    return process.env.VERCEL_ENV === 'preview'
+      ? withSiteUrl.replace('</head>', '  <meta name="ggmc-preview-editor" content="enabled">\n</head>')
+      : withSiteUrl;
+  },
   generateBundle() {
     this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}/sitemap.xml\n` });
     this.emitFile({

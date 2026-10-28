@@ -13,6 +13,7 @@
   </main>
  </div>
  <script>
+  if(new URLSearchParams(location.search).has('preview-editor')) document.head.insertAdjacentHTML('beforeend','<meta name="ggmc-preview-editor" content="enabled">');
   const manyLayers=document.createElement('section');manyLayers.id='many-layers';
   for(let i=0;i<105;i++){const button=document.createElement('button');button.textContent='Extra layer '+i;manyLayers.append(button);}
   document.querySelector('#root main').append(manyLayers);
