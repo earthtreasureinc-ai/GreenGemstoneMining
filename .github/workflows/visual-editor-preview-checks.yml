@@ -106,7 +106,8 @@ jobs:
             END;
           END $$;
           COMMIT;
-          DO $$
+          RESET ROLE;
+          DO $
           BEGIN
             BEGIN
               UPDATE public.visual_editor_versions SET note = 'tampered'
