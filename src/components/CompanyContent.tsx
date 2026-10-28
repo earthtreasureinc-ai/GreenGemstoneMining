@@ -24,7 +24,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Company profile</p>
             <h2 className="display">Local knowledge.<br /><em>Global opportunity.</em></h2>
-            <p className="body-text">Green Gemstone Mining Company is a local mining and development company based in Hargeisa, Somaliland. Its focus includes high-grade mineral opportunities across gemstone, rare earth and industrial-metal sectors, with an emphasis on responsible development and local participation.</p>
+            <p className="body-text">Green Gemstone Mining Company is a local mining and development company based in Hargeisa, Somaliland. Its stated interests span gemstones, metals and industrial minerals. Mineral evidence and project stages vary, and no resource or reserve estimates are presented in this profile.</p>
           </div>
           <div className="content-grid">
             <Card label="Our approach" title="A diversified strategy">
@@ -50,7 +50,7 @@ export default function CompanyContent() {
           <div className="content-two-col">
             <Card label="Vision" title="Processing and export">
               <ul>
-                <li>Process rare-earth and industrial-metal materials in Somaliland and pursue competitive international markets for finished products.</li>
+                <li>Evaluate responsible local processing and export opportunities for mineral products, subject to technical, legal and commercial review.</li>
                 <li>Create local employment by working with miners and deposit holders, buying suitable mineral output, and developing processing capability.</li>
                 <li>Grow the workforce over time; company materials set an ambition of 1,000 employees within five years, subject to growth and financing.</li>
               </ul>
@@ -58,8 +58,8 @@ export default function CompanyContent() {
             <Card label="Mission" title="From local connections to global markets">
               <ul>
                 <li>Expand the team across Somaliland and build relationships with miners and holders of relevant mineral deposits.</li>
-                <li>Develop responsible precious-gemstone, rare-earth and industrial-metal opportunities.</li>
-                <li>Work toward a stronger Somaliland presence in global rare-earth and industrial-metal markets.</li>
+                <li>Assess responsible gemstone, metal and industrial-mineral opportunities as project evidence develops.</li>
+                <li>Explore ways to increase local participation in regional and international mineral markets.</li>
               </ul>
             </Card>
           </div>
@@ -71,7 +71,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Mineral portfolio</p>
             <h2 className="display">Metals and mineral<br /><em>interests.</em></h2>
-            <p className="body-text">These are mineral interests identified as areas of company interest. The list describes areas of interest, not independently verified reserves or a statement that every material is currently being mined. The list describes areas of interest, not independently verified reserves or a statement that every material is currently being mined.</p>
+            <p className="body-text">These are mineral interests identified as areas of company interest. The list reflects company-stated interests. It does not represent independently verified reserves or confirm that every material is currently being mined.</p>
           </div>
           <div className="content-pill-list">{mineralInterests.map((name) => <span className="content-pill" key={name}>{name}</span>)}</div>
           <div className="content-note">Resource descriptions and geological occurrences should be assessed against project-specific technical information. The presence of a mineral in this catalogue is not a reserve estimate or a guarantee of commercial viability.</div>
@@ -132,7 +132,7 @@ export default function CompanyContent() {
           <div className="content-intro reveal in">
             <p className="eyebrow center">Mining projects</p>
             <h2 className="display light">Mining development<br /><em>opportunities.</em></h2>
-            <p className="body-text">The company reports more than six excavation-ready mining projects and says additional funding is needed to service its contracts and advance them. This section covers mining opportunities; the company's wider rural-development and community-support work is described separately below.</p>
+            <p className="body-text">The company reports more than six mining opportunities and says additional funding is needed to advance its plans and service its contracts. Their technical readiness has not been established in the material reviewed here. This section covers mining opportunities; the company's wider rural-development and community-support work is described separately below.</p>
           </div>
           <div className="content-grid">
             <Card label="Mining development" title="More than six projects">

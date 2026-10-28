@@ -166,7 +166,7 @@ const en = {
     timeline: [
       { title: 'Founded', desc: 'Initial investment and first geological survey in Somaliland.' },
       { title: 'First project', desc: 'First mining project launched.' },
-      { title: 'Emerald deposit', desc: 'Reached an emerald deposit and expanded exploration.' },
+      { title: 'Emerald exploration', desc: 'The company reports identifying an emerald deposit and continuing exploration.' },
       { title: 'Gold processing', desc: 'Gold processing plant received.' },
     ],
   },
