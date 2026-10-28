@@ -110,3 +110,141 @@ test('undo restores the original text-node positions around nested markup', asyn
  await expect(nested.locator('a')).toHaveAttribute('href', '#contact');
  await expect(nested.locator('button')).toHaveText('Nested action');
 });
+
+test('Add content creates every supported block type', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ await page.locator('#ggmc-visual-editor select[aria-label="Block type"]').selectOption('text');
+ await page.getByRole('button', { name: 'Add content', exact: true }).click();
+ await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+ await expect(page.locator('#root [data-ve-block-id]')).toHaveCount(0);
+ const kinds = ['section', 'text', 'card', 'image', 'link', 'divider'];
+ for (const kind of kinds) {
+  await page.locator('#ggmc-visual-editor select[aria-label="Block type"]').selectOption(kind);
+  await page.getByRole('button', { name: 'Add content', exact: true }).click();
+  await page.getByPlaceholder('Heading or title').fill('Test ' + kind);
+  if (['section', 'text', 'card'].includes(kind)) await page.getByPlaceholder('Description or text').fill('Test block content');
+  if (kind === 'image') await page.getByPlaceholder('Image URL').fill('/sample.png');
+  await page.getByRole('button', { name: 'Add block', exact: true }).click();
+  await expect(page.locator('#root [data-ve-block-id]')).toHaveCount(kinds.indexOf(kind) + 1);
+ }
+ await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ggmc-preview-editor-v2') || '{}').blocks.map((block: { kind: string }) => block.kind))).toEqual(kinds);
+});
+
+test('layer search finds elements beyond the initial layer list', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const search = page.getByLabel('Find anything on this page');
+ await page.getByRole('button', { name: 'Show more results', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor')).toContainText('Showing 101–114 of 114 items.');
+ await search.fill('Extra layer 104');
+ const result = page.locator('#ggmc-visual-editor button').filter({ hasText: 'Extra layer 104' }).first();
+ await expect(result).toBeVisible();
+ await expect(page.locator('#ggmc-visual-editor')).toContainText(/matches/);
+ await result.click();
+ await expect(page.locator('#ggmc-visual-editor')).toContainText('Selected:');
+});
+
+test('selected element controls style, hide/show, move, duplicate, and remove', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ await page.getByRole('button', { name: 'Select element', exact: true }).click();
+ const contact = page.locator('#contact');
+ await contact.click();
+ const baseColor = await contact.evaluate(el => getComputedStyle(el).color);
+ await page.locator('#ggmc-visual-editor input[type="color"]').first().fill('#123456');
+ await expect(contact).toHaveCSS('color', 'rgb(18, 52, 86)');
+ await page.getByRole('button', { name: 'Reset styles', exact: true }).click();
+ await expect(contact).toHaveCSS('color', baseColor);
+ await page.locator('#ggmc-visual-editor input[type="color"]').first().fill('#123456');
+ await page.getByRole('button', { name: 'Hide', exact: true }).click();
+ await expect(contact).toHaveCSS('display', 'none');
+ await page.getByRole('button', { name: 'Show', exact: true }).click();
+ await expect(contact).not.toHaveCSS('display', 'none');
+ const before = await contact.evaluate(el => [...el.parentElement!.children].indexOf(el));
+ await page.getByRole('button', { name: 'Move up', exact: true }).click();
+ const moved = await contact.evaluate(el => [...el.parentElement!.children].indexOf(el));
+ expect(moved).toBe(before - 1);
+ await page.getByRole('button', { name: 'Move down', exact: true }).click();
+ await expect.poll(() => contact.evaluate(el => [...el.parentElement!.children].indexOf(el))).toBe(before);
+ await expect(page.locator('#ggmc-visual-editor')).toContainText('Moved in this preview');
+ await page.getByRole('button', { name: 'Duplicate', exact: true }).click();
+ const duplicate = page.locator('#root [data-ve-block-id]');
+ await expect(duplicate).toHaveCount(1);
+ page.on('dialog', dialog => dialog.accept());
+ await duplicate.click();
+ await page.getByRole('button', { name: 'Remove block', exact: true }).click();
+ await expect(duplicate).toHaveCount(0);
+});
+
+test('text conversion and existing-button dropdown actions work', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const headline = page.locator('#headline');
+ const box = await headline.boundingBox();
+ if (!box) throw new Error('Headline is not visible for selection.');
+ await page.mouse.move(box.x + 2, box.y + box.height / 2);
+ await page.mouse.down();
+ await page.mouse.move(box.x + box.width - 2, box.y + box.height / 2);
+ await page.mouse.up();
+ await page.getByRole('button', { name: 'Selected text → button/link', exact: true }).click();
+ await page.locator('#ggmc-visual-editor .ve-add-form select').selectOption('button');
+ await page.locator('#ggmc-visual-editor textarea[placeholder^="Optional dropdown items"]').fill('Learn more | #contact');
+ await page.getByRole('button', { name: 'Apply', exact: true }).click();
+ const converted = headline.locator('[data-ve-inline-action]');
+ await expect(converted).toHaveText('White text that should be editable');
+ await converted.click();
+ await expect(page.locator('#root .ve-dropdown-menu')).toBeVisible();
+ await expect(page.locator('#root .ve-dropdown-menu a')).toHaveAttribute('href', '#contact');
+
+ await page.getByRole('button', { name: 'Select element', exact: true }).click();
+ await page.locator('.nested button').click();
+ await page.getByRole('button', { name: 'Add dropdown to selected button', exact: true }).click();
+ await page.locator('#ggmc-visual-editor textarea[placeholder^="Optional dropdown items"]').fill('Contact | #contact');
+ await page.getByRole('button', { name: 'Apply', exact: true }).click();
+ await page.getByRole('button', { name: 'Edit text', exact: true }).click();
+ const nestedButton = page.locator('.nested button');
+ await nestedButton.click();
+ await expect(page.locator('.nested .ve-dropdown-menu')).toBeVisible();
+ await expect(page.locator('.nested .ve-dropdown-menu a')).toHaveAttribute('href', '#contact');
+});
+
+test('server controls fail clearly without a preview server API', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ for (const name of ['Sign in', 'Refresh', 'Load draft', 'Save server draft']) {
+  await page.getByRole('button', { name, exact: true }).click();
+  await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Server drafts are not connected on this preview.');
+ }
+ await page.getByRole('button', { name: 'Publish snapshot', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Save a new draft before publishing.');
+ await page.getByRole('button', { name: 'Load versions', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Load or save a server draft first.');
+ await page.getByRole('button', { name: 'Restore locally', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Select a version first.');
+ await page.getByRole('button', { name: 'Restore to server draft', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Load a server draft and select a version first.');
+});
+
+test('panel buttons dock, collapse, expand, preview widths, export, and reset', async ({ page }) => {
+ await page.goto(fixture + '?edit=1');
+ const panel = page.locator('#ggmc-visual-editor');
+ await page.getByRole('button', { name: 'Dock left', exact: true }).click();
+ await expect(panel).toHaveClass(/ve-left/);
+ await page.getByRole('button', { name: 'Dock right', exact: true }).click();
+ await expect(panel).not.toHaveClass(/ve-left/);
+ await page.getByRole('button', { name: 'Collapse', exact: true }).click();
+ await expect(panel).toHaveClass(/ve-collapsed/);
+ await page.getByRole('button', { name: 'Expand', exact: true }).click();
+ await expect(panel).not.toHaveClass(/ve-collapsed/);
+ for (const size of ['Tablet', 'Mobile', 'Desktop']) {
+  await page.getByRole('button', { name: size, exact: true }).click();
+  await expect(page.locator('#root')).toHaveAttribute('data-ve-viewport', size);
+ }
+ await page.locator('#headline').fill('Reset me');
+ await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+ await page.getByRole('button', { name: 'Export JSON', exact: true }).click();
+ await expect(page.locator('#ggmc-visual-editor .ve-status')).toContainText('Editor change package copied');
+ const exported = await page.evaluate(() => navigator.clipboard.readText());
+ expect(JSON.parse(exported)).toMatchObject({ targetBranch: 'preview/resource-navigation-gallery', draftOnly: true });
+ await page.on('dialog', dialog => dialog.accept());
+ await page.getByRole('button', { name: 'Reset draft', exact: true }).click();
+ await expect(panel).toBeVisible();
+ await expect(page.locator('#headline')).toHaveText('White text that should be editable');
+ await expect(panel).toContainText('0 text edits');
+});
