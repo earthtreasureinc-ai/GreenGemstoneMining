@@ -221,17 +221,22 @@ test('Add content creates every supported block type', async ({ page }) => {
  await page.getByRole('button', { name: 'Add content', exact: true }).click();
  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
  await expect(page.locator('#root [data-ve-block-id]')).toHaveCount(0);
- const kinds = ['section', 'text', 'card', 'image', 'link', 'divider'];
+ const kinds = ['section', 'text', 'card', 'grid', 'image', 'video', 'link', 'divider', 'spacer'];
  for (const kind of kinds) {
   await page.locator('#ggmc-visual-editor select[aria-label="Block type"]').selectOption(kind);
   await page.getByRole('button', { name: 'Add content', exact: true }).click();
   await page.getByPlaceholder('Heading or title').fill('Test ' + kind);
-  if (['section', 'text', 'card'].includes(kind)) await page.getByPlaceholder('Description or text').fill('Test block content');
+  if (['section', 'text', 'card', 'grid', 'video'].includes(kind)) await page.getByPlaceholder('Description or text').fill('Test block content');
   if (kind === 'image') await page.getByPlaceholder('Image URL').fill('/sample.png');
+  if (kind === 'video') await page.getByPlaceholder('Video URL').fill('/sample.mp4');
   await page.getByRole('button', { name: 'Add block', exact: true }).click();
   await expect(page.locator('#root [data-ve-block-id]')).toHaveCount(kinds.indexOf(kind) + 1);
  }
  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('ggmc-preview-editor-v2') || '{}').blocks.map((block: { kind: string }) => block.kind))).toEqual(kinds);
+ await expect(page.locator('#root [data-ve-block-id] video[controls]')).toHaveAttribute('src', '/sample.mp4');
+ await expect(page.locator('#root [data-ve-block-id].ve-added-grid')).toHaveCount(1);
+ await expect(page.locator('#root [data-ve-block-id].ve-added-grid .ve-added-card')).toHaveCount(2);
+ await expect(page.locator('#root [data-ve-block-id].ve-added-spacer')).toHaveCSS('height', '48px');
 });
 
 test('layer search finds elements beyond the initial layer list', async ({ page }) => {
